@@ -7,7 +7,7 @@ import { Rocket, Coins, Users, Shield, ChevronRight, Sparkles } from 'lucide-rea
 
 export default function Index() {
   const { t } = useTranslation();
-  const { isConnected, connect } = useWalletContext();
+  const { isConnected, openConnectModal } = useWalletContext();
 
   return (
     <div className="min-h-screen bg-background overflow-hidden">
@@ -63,7 +63,7 @@ export default function Index() {
                   </Link>
                 </Button>
               ) : (
-                <Button onClick={connect} size="lg" className="h-14 px-10 text-lg gap-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/30">
+                <Button onClick={openConnectModal} size="lg" className="h-14 px-10 text-lg gap-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/30">
                   {t('wallet.connect')}
                   <ChevronRight className="h-5 w-5" />
                 </Button>

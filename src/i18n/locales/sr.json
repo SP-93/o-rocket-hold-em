@@ -13,7 +13,8 @@
     "save": "Sačuvaj",
     "back": "Nazad",
     "next": "Dalje",
-    "language": "Jezik"
+    "language": "Jezik",
+    "or": "ili"
   },
   "nav": {
     "lobby": "Lobi",
@@ -47,14 +48,22 @@
     "potSize": "Ukupan pot"
   },
   "wallet": {
-    "connect": "Poveži MetaMask",
+    "connect": "Poveži Novčanik",
     "connecting": "Povezivanje...",
     "connected": "Povezan",
     "wrongNetwork": "Pogrešna mreža",
     "switchNetwork": "Prebaci na OverProtocol",
     "installMetaMask": "Instaliraj MetaMask",
     "address": "Adresa",
-    "woverBalance": "WOVER stanje"
+    "woverBalance": "OVER Stanje",
+    "viewExplorer": "Pogledaj na Exploreru",
+    "selectWallet": "Poveži Tvoj Novčanik",
+    "detected": "Pronađeni Novčanici",
+    "noWallet": "Novčanik nije pronađen",
+    "getWallet": "Nabavi Novčanik",
+    "getOverFlex": "Nabavi OverFlex",
+    "getMetaMask": "Nabavi MetaMask",
+    "recommended": "Preporučeno"
   },
   "lobby": {
     "title": "Poker Lobi",
