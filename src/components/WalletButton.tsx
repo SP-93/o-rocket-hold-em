@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { WalletConnectModal } from '@/components/WalletConnectModal';
 import { Wallet, LogOut, AlertTriangle, ExternalLink } from 'lucide-react';
 
 export function WalletButton() {
@@ -18,38 +19,38 @@ export function WalletButton() {
     isConnecting,
     isCorrectNetwork,
     woverBalance,
-    hasMetaMask,
+    selectedProvider,
+    providers,
+    isDetectingProviders,
+    isModalOpen,
+    openConnectModal,
+    closeConnectModal,
     connect,
     disconnect,
     switchNetwork,
   } = useWalletContext();
 
-  // Not installed
-  if (!hasMetaMask) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-2"
-        onClick={() => window.open('https://metamask.io/download/', '_blank')}
-      >
-        <Wallet className="h-4 w-4" />
-        {t('wallet.installMetaMask')}
-      </Button>
-    );
-  }
-
-  // Not connected
+  // Not connected - show connect button
   if (!isConnected) {
     return (
-      <Button
-        onClick={connect}
-        disabled={isConnecting}
-        className="gap-2 bg-primary hover:bg-primary/90"
-      >
-        <Wallet className="h-4 w-4" />
-        {isConnecting ? t('wallet.connecting') : t('wallet.connect')}
-      </Button>
+      <>
+        <Button
+          onClick={openConnectModal}
+          className="gap-2 bg-primary hover:bg-primary/90 glow-primary"
+        >
+          <Wallet className="h-4 w-4" />
+          {t('wallet.connect')}
+        </Button>
+
+        <WalletConnectModal
+          open={isModalOpen}
+          onOpenChange={closeConnectModal}
+          providers={providers}
+          isDetecting={isDetectingProviders}
+          onConnect={connect}
+          isConnecting={isConnecting}
+        />
+      </>
     );
   }
 
@@ -73,12 +74,33 @@ export function WalletButton() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2 border-primary/50">
-          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+        <Button variant="outline" className="gap-2 border-primary/50 hover:border-primary">
+          {/* Wallet icon from provider */}
+          {selectedProvider?.info.icon ? (
+            <img 
+              src={selectedProvider.info.icon} 
+              alt={selectedProvider.info.name}
+              className="h-4 w-4 rounded-sm"
+            />
+          ) : (
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+          )}
           <span className="font-mono text-sm">{shortenedAddress}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        {/* Wallet name */}
+        {selectedProvider && (
+          <>
+            <div className="px-2 py-1.5">
+              <p className="text-xs text-muted-foreground">Connected with</p>
+              <p className="text-sm font-medium">{selectedProvider.info.name}</p>
+            </div>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        
+        {/* Balance */}
         <div className="px-2 py-2">
           <p className="text-xs text-muted-foreground">{t('wallet.woverBalance')}</p>
           <p className="text-lg font-display font-bold text-primary">
@@ -86,15 +108,19 @@ export function WalletButton() {
           </p>
         </div>
         <DropdownMenuSeparator />
+        
+        {/* Explorer link */}
         <DropdownMenuItem
-          onClick={() => window.open(`https://scan.overprotocol.com/address/${address}`, '_blank')}
+          onClick={() => window.open(`https://scan.over.network/address/${address}`, '_blank')}
           className="gap-2"
         >
           <ExternalLink className="h-4 w-4" />
-          View on Explorer
+          {t('wallet.viewExplorer')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={disconnect} className="gap-2 text-destructive">
+        
+        {/* Disconnect */}
+        <DropdownMenuItem onClick={disconnect} className="gap-2 text-destructive focus:text-destructive">
           <LogOut className="h-4 w-4" />
           {t('common.disconnect')}
         </DropdownMenuItem>

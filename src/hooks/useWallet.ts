@@ -1,21 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ethers } from 'ethers';
-
-// OverProtocol Mainnet configuration
-const OVER_PROTOCOL_CHAIN = {
-  chainId: '0xD3A0', // 54176 in hex
-  chainName: 'OverProtocol Mainnet',
-  nativeCurrency: {
-    name: 'OVER',
-    symbol: 'OVER',
-    decimals: 18,
-  },
-  rpcUrls: ['https://rpc.mainnet.overprotocol.com'],
-  blockExplorerUrls: ['https://scan.overprotocol.com'],
-};
-
-// WOVER token address on OverProtocol
-const WOVER_ADDRESS = '0x0000000000000000000000000000000000000000'; // Replace with actual WOVER address
+import { 
+  EIP6963ProviderDetail, 
+  EIP1193Provider,
+  OVER_PROTOCOL_CHAIN, 
+  OVER_CHAIN_ID 
+} from '@/types/wallet';
 
 interface WalletState {
   address: string | null;
@@ -25,6 +15,7 @@ interface WalletState {
   isCorrectNetwork: boolean;
   woverBalance: string;
   error: string | null;
+  selectedProvider: EIP6963ProviderDetail | null;
 }
 
 export function useWallet() {
@@ -36,14 +27,13 @@ export function useWallet() {
     isCorrectNetwork: false,
     woverBalance: '0',
     error: null,
+    selectedProvider: null,
   });
 
-  const updateBalance = useCallback(async (address: string) => {
+  const updateBalance = useCallback(async (address: string, provider: EIP1193Provider) => {
     try {
-      if (!window.ethereum) return;
-      
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const balance = await provider.getBalance(address);
+      const ethersProvider = new ethers.providers.Web3Provider(provider as any);
+      const balance = await ethersProvider.getBalance(address);
       const formattedBalance = ethers.utils.formatEther(balance);
       
       setState(prev => ({
@@ -55,53 +45,19 @@ export function useWallet() {
     }
   }, []);
 
-  const checkConnection = useCallback(async () => {
-    if (!window.ethereum) return;
-
-    try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const accounts = await provider.listAccounts();
-      const network = await provider.getNetwork();
-
-      if (accounts.length > 0) {
-        const address = accounts[0];
-        const isCorrectNetwork = network.chainId === 54176;
-
-        setState(prev => ({
-          ...prev,
-          address,
-          isConnected: true,
-          chainId: network.chainId,
-          isCorrectNetwork,
-        }));
-
-        if (isCorrectNetwork) {
-          await updateBalance(address);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking connection:', error);
-    }
-  }, [updateBalance]);
-
-  const connect = useCallback(async () => {
-    if (!window.ethereum) {
-      setState(prev => ({
-        ...prev,
-        error: 'MetaMask not installed',
-      }));
-      return;
-    }
-
+  const connect = useCallback(async (providerDetail: EIP6963ProviderDetail) => {
     setState(prev => ({ ...prev, isConnecting: true, error: null }));
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const accounts = await provider.send('eth_requestAccounts', []);
-      const network = await provider.getNetwork();
+      const { provider } = providerDetail;
+      const ethersProvider = new ethers.providers.Web3Provider(provider as any);
+      
+      // Request accounts
+      const accounts = await ethersProvider.send('eth_requestAccounts', []);
+      const network = await ethersProvider.getNetwork();
 
       const address = accounts[0];
-      const isCorrectNetwork = network.chainId === 54176;
+      const isCorrectNetwork = network.chainId === OVER_CHAIN_ID;
 
       setState(prev => ({
         ...prev,
@@ -110,10 +66,14 @@ export function useWallet() {
         isConnecting: false,
         chainId: network.chainId,
         isCorrectNetwork,
+        selectedProvider: providerDetail,
       }));
 
+      // Save last used wallet
+      localStorage.setItem('lastWalletRdns', providerDetail.info.rdns);
+
       if (isCorrectNetwork) {
-        await updateBalance(address);
+        await updateBalance(address, provider);
       }
     } catch (error: any) {
       setState(prev => ({
@@ -125,6 +85,7 @@ export function useWallet() {
   }, [updateBalance]);
 
   const disconnect = useCallback(() => {
+    localStorage.removeItem('lastWalletRdns');
     setState({
       address: null,
       isConnected: false,
@@ -133,14 +94,17 @@ export function useWallet() {
       isCorrectNetwork: false,
       woverBalance: '0',
       error: null,
+      selectedProvider: null,
     });
   }, []);
 
   const switchNetwork = useCallback(async () => {
-    if (!window.ethereum) return;
+    if (!state.selectedProvider) return;
+
+    const { provider } = state.selectedProvider;
 
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: OVER_PROTOCOL_CHAIN.chainId }],
       });
@@ -148,7 +112,7 @@ export function useWallet() {
       // Chain not added, try to add it
       if (switchError.code === 4902) {
         try {
-          await window.ethereum.request({
+          await provider.request({
             method: 'wallet_addEthereumChain',
             params: [OVER_PROTOCOL_CHAIN],
           });
@@ -157,61 +121,55 @@ export function useWallet() {
         }
       }
     }
-  }, []);
+  }, [state.selectedProvider]);
 
   // Listen for account and network changes
   useEffect(() => {
-    if (!window.ethereum) return;
+    if (!state.selectedProvider) return;
 
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length === 0) {
+    const { provider } = state.selectedProvider;
+
+    const handleAccountsChanged = (accounts: unknown) => {
+      const accountsArray = accounts as string[];
+      if (accountsArray.length === 0) {
         disconnect();
       } else {
         setState(prev => ({
           ...prev,
-          address: accounts[0],
+          address: accountsArray[0],
         }));
-        updateBalance(accounts[0]);
+        updateBalance(accountsArray[0], provider);
       }
     };
 
-    const handleChainChanged = (chainId: string) => {
-      const numericChainId = parseInt(chainId, 16);
+    const handleChainChanged = (chainId: unknown) => {
+      const numericChainId = parseInt(chainId as string, 16);
+      const isCorrectNetwork = numericChainId === OVER_CHAIN_ID;
+      
       setState(prev => ({
         ...prev,
         chainId: numericChainId,
-        isCorrectNetwork: numericChainId === 54176,
+        isCorrectNetwork,
       }));
       
-      if (numericChainId === 54176 && state.address) {
-        updateBalance(state.address);
+      if (isCorrectNetwork && state.address) {
+        updateBalance(state.address, provider);
       }
     };
 
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
-
-    // Check initial connection
-    checkConnection();
+    provider.on('accountsChanged', handleAccountsChanged);
+    provider.on('chainChanged', handleChainChanged);
 
     return () => {
-      window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
-      window.ethereum?.removeListener('chainChanged', handleChainChanged);
+      provider.removeListener('accountsChanged', handleAccountsChanged);
+      provider.removeListener('chainChanged', handleChainChanged);
     };
-  }, [checkConnection, disconnect, updateBalance, state.address]);
+  }, [state.selectedProvider, state.address, disconnect, updateBalance]);
 
   return {
     ...state,
     connect,
     disconnect,
     switchNetwork,
-    hasMetaMask: typeof window !== 'undefined' && !!window.ethereum,
   };
-}
-
-// Type declaration for window.ethereum
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
 }

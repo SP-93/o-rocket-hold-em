@@ -13,7 +13,8 @@
     "save": "Save",
     "back": "Back",
     "next": "Next",
-    "language": "Language"
+    "language": "Language",
+    "or": "or"
   },
   "nav": {
     "lobby": "Lobby",
@@ -47,14 +48,22 @@
     "potSize": "Total Pot"
   },
   "wallet": {
-    "connect": "Connect MetaMask",
+    "connect": "Connect Wallet",
     "connecting": "Connecting...",
     "connected": "Connected",
     "wrongNetwork": "Wrong Network",
     "switchNetwork": "Switch to OverProtocol",
     "installMetaMask": "Install MetaMask",
     "address": "Address",
-    "woverBalance": "WOVER Balance"
+    "woverBalance": "OVER Balance",
+    "viewExplorer": "View on Explorer",
+    "selectWallet": "Connect Your Wallet",
+    "detected": "Detected Wallets",
+    "noWallet": "No wallet detected",
+    "getWallet": "Get a Wallet",
+    "getOverFlex": "Get OverFlex",
+    "getMetaMask": "Get MetaMask",
+    "recommended": "Recommended"
   },
   "lobby": {
     "title": "Poker Lobby",
