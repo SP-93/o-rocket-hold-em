@@ -1,0 +1,107 @@
+{
+  "common": {
+    "connectWallet": "Poveži novčanik",
+    "disconnect": "Prekini vezu",
+    "balance": "Stanje",
+    "chips": "Čipovi",
+    "loading": "Učitavanje...",
+    "error": "Greška",
+    "success": "Uspešno",
+    "cancel": "Otkaži",
+    "confirm": "Potvrdi",
+    "close": "Zatvori",
+    "save": "Sačuvaj",
+    "back": "Nazad",
+    "next": "Dalje",
+    "language": "Jezik"
+  },
+  "nav": {
+    "lobby": "Lobi",
+    "tables": "Stolovi",
+    "profile": "Profil",
+    "admin": "Admin"
+  },
+  "hero": {
+    "title": "O'Rocket Hold'em",
+    "subtitle": "Multiplayer Texas Hold'em poker na OverProtocol blockchain-u",
+    "playNow": "Igraj Sada",
+    "learnMore": "Saznaj Više"
+  },
+  "wallet": {
+    "connect": "Poveži MetaMask",
+    "connecting": "Povezivanje...",
+    "connected": "Povezan",
+    "wrongNetwork": "Pogrešna mreža",
+    "switchNetwork": "Prebaci na OverProtocol",
+    "installMetaMask": "Instaliraj MetaMask",
+    "address": "Adresa",
+    "woverBalance": "WOVER stanje"
+  },
+  "lobby": {
+    "title": "Poker Lobi",
+    "subtitle": "Izaberi sto i pridruži se igri",
+    "createTable": "Napravi Sto",
+    "joinTable": "Pridruži se",
+    "players": "Igrači",
+    "blinds": "Blindovi",
+    "avgPot": "Prosečan pot",
+    "noTables": "Nema dostupnih stolova",
+    "filters": {
+      "all": "Svi",
+      "fivePlayer": "5 igrača",
+      "sixPlayer": "6 igrača"
+    }
+  },
+  "table": {
+    "pot": "Pot",
+    "dealer": "Diler",
+    "smallBlind": "Mali blind",
+    "bigBlind": "Veliki blind",
+    "yourTurn": "Tvoj potez",
+    "waiting": "Čekanje...",
+    "fold": "Baci",
+    "check": "Ček",
+    "call": "Prati",
+    "raise": "Povisi",
+    "allIn": "All-in",
+    "halfPot": "1/2 Pot",
+    "fullPot": "Pot",
+    "leave": "Napusti sto"
+  },
+  "chips": {
+    "buy": "Kupi čipove",
+    "cashOut": "Isplati",
+    "tipDealer": "Napojnica dileru",
+    "amount": "Iznos",
+    "inGame": "U igri",
+    "available": "Dostupno"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "dashboard": "Kontrolna tabla",
+    "deploy": "Deploy ugovora",
+    "deployContract": "Deplojiraj Smart Contract",
+    "contractAddress": "Adresa ugovora",
+    "rake": "Rake",
+    "rakePercent": "Rake procenat",
+    "withdrawRake": "Povuci rake",
+    "pauseGame": "Pauziraj igru",
+    "resumeGame": "Nastavi igru",
+    "stats": {
+      "totalPlayers": "Ukupno igrača",
+      "activeTables": "Aktivnih stolova",
+      "totalRake": "Ukupan rake",
+      "todayRake": "Današnji rake"
+    }
+  },
+  "errors": {
+    "walletNotConnected": "Novčanik nije povezan",
+    "insufficientBalance": "Nedovoljno sredstava",
+    "transactionFailed": "Transakcija nije uspela",
+    "networkError": "Greška mreže"
+  },
+  "footer": {
+    "poweredBy": "Pokreće OverProtocol",
+    "rights": "Sva prava zadržana"
+  }
+}

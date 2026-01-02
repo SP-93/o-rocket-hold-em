@@ -1,0 +1,107 @@
+{
+  "common": {
+    "connectWallet": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "balance": "Balance",
+    "chips": "Chips",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "language": "Language"
+  },
+  "nav": {
+    "lobby": "Lobby",
+    "tables": "Tables",
+    "profile": "Profile",
+    "admin": "Admin"
+  },
+  "hero": {
+    "title": "O'Rocket Hold'em",
+    "subtitle": "Multiplayer Texas Hold'em poker on OverProtocol blockchain",
+    "playNow": "Play Now",
+    "learnMore": "Learn More"
+  },
+  "wallet": {
+    "connect": "Connect MetaMask",
+    "connecting": "Connecting...",
+    "connected": "Connected",
+    "wrongNetwork": "Wrong Network",
+    "switchNetwork": "Switch to OverProtocol",
+    "installMetaMask": "Install MetaMask",
+    "address": "Address",
+    "woverBalance": "WOVER Balance"
+  },
+  "lobby": {
+    "title": "Poker Lobby",
+    "subtitle": "Choose a table and join the game",
+    "createTable": "Create Table",
+    "joinTable": "Join",
+    "players": "Players",
+    "blinds": "Blinds",
+    "avgPot": "Avg Pot",
+    "noTables": "No tables available",
+    "filters": {
+      "all": "All",
+      "fivePlayer": "5 Players",
+      "sixPlayer": "6 Players"
+    }
+  },
+  "table": {
+    "pot": "Pot",
+    "dealer": "Dealer",
+    "smallBlind": "Small Blind",
+    "bigBlind": "Big Blind",
+    "yourTurn": "Your Turn",
+    "waiting": "Waiting...",
+    "fold": "Fold",
+    "check": "Check",
+    "call": "Call",
+    "raise": "Raise",
+    "allIn": "All-in",
+    "halfPot": "1/2 Pot",
+    "fullPot": "Pot",
+    "leave": "Leave Table"
+  },
+  "chips": {
+    "buy": "Buy Chips",
+    "cashOut": "Cash Out",
+    "tipDealer": "Tip Dealer",
+    "amount": "Amount",
+    "inGame": "In Game",
+    "available": "Available"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "dashboard": "Dashboard",
+    "deploy": "Deploy Contract",
+    "deployContract": "Deploy Smart Contract",
+    "contractAddress": "Contract Address",
+    "rake": "Rake",
+    "rakePercent": "Rake Percent",
+    "withdrawRake": "Withdraw Rake",
+    "pauseGame": "Pause Game",
+    "resumeGame": "Resume Game",
+    "stats": {
+      "totalPlayers": "Total Players",
+      "activeTables": "Active Tables",
+      "totalRake": "Total Rake",
+      "todayRake": "Today's Rake"
+    }
+  },
+  "errors": {
+    "walletNotConnected": "Wallet not connected",
+    "insufficientBalance": "Insufficient balance",
+    "transactionFailed": "Transaction failed",
+    "networkError": "Network error"
+  },
+  "footer": {
+    "poweredBy": "Powered by OverProtocol",
+    "rights": "All rights reserved"
+  }
+}
