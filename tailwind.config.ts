@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ['Orbitron', 'sans-serif'],
+        body: ['Rajdhani', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,6 +61,24 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Poker specific colors
+        poker: {
+          felt: "hsl(var(--poker-felt))",
+          "felt-dark": "hsl(var(--poker-felt-dark))",
+          gold: "hsl(var(--poker-gold))",
+          "gold-dim": "hsl(var(--poker-gold-dim))",
+          red: "hsl(var(--poker-red))",
+        },
+        chip: {
+          blue: "hsl(var(--poker-chip-blue))",
+          green: "hsl(var(--poker-chip-green))",
+          black: "hsl(var(--poker-chip-black))",
+          white: "hsl(var(--poker-chip-white))",
+        },
+        "card-suit": {
+          red: "hsl(var(--card-red))",
+          black: "hsl(var(--card-black))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,25 +87,37 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.6" },
+        },
+        "card-deal": {
+          "0%": { transform: "translateX(-100px) translateY(-50px) rotate(-10deg)", opacity: "0" },
+          "100%": { transform: "translateX(0) translateY(0) rotate(0)", opacity: "1" },
+        },
+        "chip-bounce": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "card-deal": "card-deal 0.5s ease-out",
+        "chip-bounce": "chip-bounce 0.5s ease-in-out",
+        "fade-in": "fade-in 0.3s ease-out",
       },
     },
   },
