@@ -27,6 +27,25 @@
     "playNow": "Igraj Sada",
     "learnMore": "Saznaj Više"
   },
+  "features": {
+    "woverChips": {
+      "title": "WOVER Čipovi",
+      "description": "Kupi čipove sa WOVER tokenima. Isplati dobitak direktno u svoj novčanik."
+    },
+    "multiplayer": {
+      "title": "Real-Time Multiplayer",
+      "description": "Igraj protiv pravih igrača u realnom vremenu. Bez botova, samo pravi poker."
+    },
+    "provablyFair": {
+      "title": "Provably Fair",
+      "description": "Sve transakcije su transparentne na blockchain-u. Svaka ruka je verifikovana."
+    }
+  },
+  "stats": {
+    "players": "Aktivnih igrača",
+    "tables": "Aktivnih stolova",
+    "potSize": "Ukupan pot"
+  },
   "wallet": {
     "connect": "Poveži MetaMask",
     "connecting": "Povezivanje...",
