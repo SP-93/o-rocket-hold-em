@@ -27,6 +27,25 @@
     "playNow": "Play Now",
     "learnMore": "Learn More"
   },
+  "features": {
+    "woverChips": {
+      "title": "WOVER Chips",
+      "description": "Buy chips with WOVER tokens. Cash out winnings directly to your wallet."
+    },
+    "multiplayer": {
+      "title": "Real-Time Multiplayer",
+      "description": "Play against real players in real-time. No bots, just real poker."
+    },
+    "provablyFair": {
+      "title": "Provably Fair",
+      "description": "All transactions are transparent on the blockchain. Every hand is verified."
+    }
+  },
+  "stats": {
+    "players": "Active Players",
+    "tables": "Live Tables",
+    "potSize": "Total Pot"
+  },
   "wallet": {
     "connect": "Connect MetaMask",
     "connecting": "Connecting...",

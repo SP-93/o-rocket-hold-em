@@ -9,8 +9,8 @@ import {
 import { Globe } from 'lucide-react';
 
 const languages = [
-  { code: 'sr', name: 'Srpski', flag: '🇷🇸' },
   { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'sr', name: 'Srpski', flag: '🇷🇸' },
 ];
 
 export function LanguageSwitcher() {
