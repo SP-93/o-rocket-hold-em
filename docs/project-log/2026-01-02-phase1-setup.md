@@ -1,5 +1,54 @@
 # O'Rocket Hold'em - Project Log
 
+## 2026-01-02 - Faza 2: Lobby sistem
+
+### Šta je urađeno:
+1. **Lobby stranica** (`/lobby`)
+   - Lista stolova sa mock podacima
+   - Filteri: Svi / 5 igrača / 6 igrača
+   - Refresh dugme
+   - Broj stolova prikaz
+
+2. **TableCard komponenta**
+   - Prikaz imena stola, statusa (čeka/u toku)
+   - Vizuelni indikator popunjenosti (dots)
+   - Blindovi i prosečan pot
+   - Join dugme (disabled ako je pun)
+
+3. **Create Table modal**
+   - Ime stola input
+   - Izbor broja igrača (5/6)
+   - Izbor blindova (5/10 do 100/200)
+   - Validacija i toast poruke
+
+4. **Table stranica** (`/table/:id`)
+   - Placeholder za poker sto
+   - Poker felt pozadina
+   - Back dugme ka lobiju
+
+5. **TypeScript tipovi**
+   - PokerTable, Player, TableSeat, Card, GameState
+   - Sve u `src/types/poker.ts`
+
+### Rute:
+- `/` - Landing page
+- `/lobby` - Lista stolova
+- `/table/:id` - Poker sto (placeholder)
+
+### Mock podaci:
+- 6 stolova sa različitim parametrima
+- Različiti statusi (waiting/playing)
+- Različiti blindovi
+
+### Sledeći koraci (Faza 3):
+- [ ] Vizuelni poker sto sa mestima
+- [ ] Karte komponente (face/back)
+- [ ] Betting kontrole (Fold, Check, Call, Raise, All-in)
+- [ ] Pot display
+- [ ] Dealer button
+
+---
+
 ## 2026-01-02 - Faza 1: Početak projekta
 
 ### Šta je urađeno:
@@ -38,17 +87,6 @@ RPC URL: https://rpc.mainnet.overprotocol.com
 Currency: OVER
 Explorer: https://scan.overprotocol.com
 ```
-
-### Sledeći koraci (Faza 2):
-- [ ] Lobby stranica sa listom stolova
-- [ ] Create table modal
-- [ ] Supabase integracija za stolove
-- [ ] Join table funkcionalnost
-
-### Bitne odluke:
-- Srpski jezik je default (korisnici su većinom iz Srbije)
-- Dark mode only (poker estetika)
-- MetaMask only za sada (može se proširiti kasnije)
 
 ---
 
