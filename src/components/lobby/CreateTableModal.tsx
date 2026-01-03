@@ -42,8 +42,8 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
   const handleCreate = async () => {
     if (!tableName.trim()) {
       toast({
-        title: 'Error',
-        description: 'Please enter a table name',
+        title: t('common.error'),
+        description: t('lobby.enterTableName'),
         variant: 'destructive',
       });
       return;
@@ -61,16 +61,16 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
 
     if (tableId) {
       toast({
-        title: 'Table created!',
-        description: `${tableName} is ready to play`,
+        title: t('lobby.tableCreated'),
+        description: t('lobby.tableReady', { name: tableName }),
       });
       onOpenChange(false);
       setTableName('');
       navigate(`/table/${tableId}`);
     } else {
       toast({
-        title: 'Error',
-        description: 'Failed to create table',
+        title: t('common.error'),
+        description: t('lobby.createFailed'),
         variant: 'destructive',
       });
     }
@@ -86,17 +86,17 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
             {t('lobby.createTable')}
           </DialogTitle>
           <DialogDescription>
-            Set up parameters for a new poker table
+            {t('lobby.setupDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Table Name */}
           <div className="space-y-2">
-            <Label htmlFor="tableName">Table Name</Label>
+            <Label htmlFor="tableName">{t('lobby.tableName')}</Label>
             <Input
               id="tableName"
-              placeholder="e.g. High Rollers"
+              placeholder={t('lobby.tableNamePlaceholder')}
               value={tableName}
               onChange={(e) => setTableName(e.target.value)}
               className="font-body"
@@ -105,7 +105,7 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
 
           {/* Max Players */}
           <div className="space-y-3">
-            <Label>Number of Players</Label>
+            <Label>{t('lobby.numberOfPlayers')}</Label>
             <RadioGroup
               value={maxPlayers}
               onValueChange={(value) => setMaxPlayers(value as '5' | '6')}
@@ -114,13 +114,13 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="5" id="players-5" />
                 <Label htmlFor="players-5" className="cursor-pointer">
-                  5 players
+                  5 {t('common.players')}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="6" id="players-6" />
                 <Label htmlFor="players-6" className="cursor-pointer">
-                  6 players
+                  6 {t('common.players')}
                 </Label>
               </div>
             </RadioGroup>

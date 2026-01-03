@@ -43,8 +43,8 @@ export default function Table() {
   const handleJoinSeat = async (seatNumber: number) => {
     if (!isConnected || !address) {
       toast({
-        title: 'Connect Wallet',
-        description: 'Please connect your wallet to join a table',
+        title: t('errors.connectWallet'),
+        description: t('errors.connectWalletDescription'),
         variant: 'destructive',
       });
       return;
@@ -53,8 +53,8 @@ export default function Table() {
     const success = await joinTable(seatNumber, address, undefined, 1000);
     if (success) {
       toast({
-        title: 'Joined!',
-        description: `You joined seat #${seatNumber}`,
+        title: t('common.success'),
+        description: t('table.joinedSeat', { seat: seatNumber }),
       });
     }
   };
@@ -64,8 +64,8 @@ export default function Table() {
     const success = await leaveTable(playerSeat.seat_number);
     if (success) {
       toast({
-        title: 'Left table',
-        description: 'You have left the table',
+        title: t('common.success'),
+        description: t('table.leftTable'),
       });
     }
   };
@@ -108,9 +108,9 @@ export default function Table() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container py-8 text-center">
-          <p className="text-destructive mb-4">{error || 'Table not found'}</p>
+          <p className="text-destructive mb-4">{error || t('table.tableNotFound')}</p>
           <Button asChild>
-            <Link to="/lobby">Back to Lobby</Link>
+            <Link to="/lobby">{t('table.backToLobby')}</Link>
           </Button>
         </main>
       </div>
@@ -179,13 +179,13 @@ export default function Table() {
         {/* Join prompt */}
         {!playerSeat && isConnected && (
           <div className="text-center py-4">
-            <p className="text-muted-foreground">Click an empty seat to join the table</p>
+            <p className="text-muted-foreground">{t('table.clickToJoin')}</p>
           </div>
         )}
 
         {!isConnected && (
           <div className="text-center py-4">
-            <p className="text-muted-foreground">Connect your wallet to join the game</p>
+            <p className="text-muted-foreground">{t('table.connectToJoin')}</p>
           </div>
         )}
 
