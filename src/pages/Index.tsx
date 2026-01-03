@@ -146,11 +146,14 @@ export default function Index() {
                 </Button>
               )}
               <Button 
+                asChild
                 variant="outline" 
                 size="lg" 
                 className="h-14 px-10 text-lg gap-3 border-2 border-border/60 bg-background/50 backdrop-blur-sm hover:bg-background/80 hover:border-primary/50 text-foreground transition-all duration-300"
               >
-                {t('hero.learnMore')}
+                <Link to="/about">
+                  {t('hero.learnMore')}
+                </Link>
               </Button>
             </motion.div>
           </motion.div>

@@ -47,7 +47,7 @@ export default function Lobby() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
               <div>
-                <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
+                <h1 className="font-display text-3xl md:text-4xl font-bold mb-2 text-foreground">
                   {t('lobby.title')}
                 </h1>
                 <p className="text-muted-foreground">
