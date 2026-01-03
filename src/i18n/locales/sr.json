@@ -91,10 +91,14 @@
     "check": "Ček",
     "call": "Prati",
     "raise": "Povisi",
-    "allIn": "All-in",
+    "raiseTo": "Povisi na",
+    "allIn": "All In",
     "halfPot": "1/2 Pot",
     "fullPot": "Pot",
-    "leave": "Napusti sto"
+    "leave": "Napusti sto",
+    "waitingForTurn": "Čekaj svoj potez...",
+    "sidePot": "Sporedni pot",
+    "dealingCards": "Deljenje karata..."
   },
   "chips": {
     "buy": "Kupi čipove",

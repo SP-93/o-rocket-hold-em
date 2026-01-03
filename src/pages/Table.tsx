@@ -4,10 +4,68 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
+import { PokerTable, ActionButtons } from '@/components/poker';
+import { Card } from '@/types/poker';
+
+// Mock data for demo
+const mockPlayers = [
+  {
+    walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
+    displayName: 'You',
+    chipStack: 5000,
+    cards: [
+      { suit: 'hearts' as const, rank: 'A' as const },
+      { suit: 'spades' as const, rank: 'K' as const },
+    ],
+    isTurn: true,
+  },
+  {
+    walletAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+    displayName: 'Player2',
+    chipStack: 3200,
+    isSmallBlind: true,
+    lastAction: 'call' as const,
+  },
+  null, // Empty seat
+  {
+    walletAddress: '0x9876543210fedcba9876543210fedcba98765432',
+    displayName: 'Dealer_Pro',
+    chipStack: 8500,
+    isDealer: true,
+    cards: [
+      { suit: 'clubs' as const, rank: '10' as const },
+      { suit: 'diamonds' as const, rank: 'Q' as const },
+    ],
+    lastAction: 'raise' as const,
+  },
+  {
+    walletAddress: '0xfedcba9876543210fedcba9876543210fedcba98',
+    chipStack: 1200,
+    isBigBlind: true,
+    isFolded: true,
+    lastAction: 'fold' as const,
+  },
+  null, // Empty seat
+];
+
+const mockCommunityCards: Card[] = [
+  { suit: 'hearts', rank: '7' },
+  { suit: 'diamonds', rank: 'J' },
+  { suit: 'clubs', rank: '3' },
+];
 
 export default function Table() {
   const { id } = useParams();
   const { t } = useTranslation();
+  const [phase] = useState<'flop'>('flop');
+  const [pot] = useState(1250);
+
+  const handleFold = () => console.log('Fold');
+  const handleCheck = () => console.log('Check');
+  const handleCall = () => console.log('Call');
+  const handleRaise = (amount: number) => console.log('Raise:', amount);
+  const handleAllIn = () => console.log('All-in');
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,20 +81,35 @@ export default function Table() {
           </Button>
 
           <h1 className="font-display text-2xl font-bold">
-            Poker Sto #{id}
+            {t('table.pot')}: Table #{id}
           </h1>
         </div>
 
-        {/* Placeholder for poker table - will be built in Phase 3 */}
-        <div className="aspect-[16/10] max-w-4xl mx-auto rounded-[100px] poker-felt border-8 border-poker-felt-dark flex items-center justify-center">
-          <div className="text-center">
-            <p className="font-display text-2xl text-foreground/80 mb-2">
-              Poker Sto
-            </p>
-            <p className="text-muted-foreground">
-              Faza 3: UI za poker sto dolazi uskoro
-            </p>
-          </div>
+        {/* Poker table */}
+        <PokerTable
+          players={mockPlayers}
+          communityCards={mockCommunityCards}
+          pot={pot}
+          phase={phase}
+          maxPlayers={6}
+          className="mb-8"
+        />
+
+        {/* Action buttons */}
+        <div className="max-w-xl mx-auto">
+          <ActionButtons
+            isPlayerTurn={true}
+            currentBet={100}
+            playerChips={5000}
+            minRaise={200}
+            maxRaise={5000}
+            canCheck={false}
+            onFold={handleFold}
+            onCheck={handleCheck}
+            onCall={handleCall}
+            onRaise={handleRaise}
+            onAllIn={handleAllIn}
+          />
         </div>
       </main>
     </div>
