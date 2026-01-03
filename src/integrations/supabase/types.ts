@@ -103,6 +103,41 @@ export type Database = {
         }
         Relationships: []
       }
+      table_chat: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          player_name: string | null
+          player_wallet: string
+          table_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          player_name?: string | null
+          player_wallet: string
+          table_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          player_name?: string | null
+          player_wallet?: string
+          table_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_chat_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       table_seats: {
         Row: {
           cards: Json | null
