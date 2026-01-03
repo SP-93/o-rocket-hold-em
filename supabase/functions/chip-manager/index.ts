@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Constants matching smart contract
-const CHIPS_PER_WOVER = 100;
+// 1 WOVER = 1 CHIP (with 18 decimal precision)
+const CHIPS_PER_WOVER = 1;
 
 // Admin wallet - owner of smart contract (for verification and logging)
 const ADMIN_WALLET_ADDRESS = '0x8334966329b7f4b459633696A8CA59118253bC89';
@@ -96,6 +96,7 @@ serve(async (req) => {
           return errorResponse('Event already processed', 409);
         }
 
+        // 1 WOVER = 1 CHIP (direct 1:1 conversion)
         const chips_granted = event_type === 'deposit' 
           ? wover_amount * CHIPS_PER_WOVER 
           : -(wover_amount * CHIPS_PER_WOVER);
@@ -364,7 +365,7 @@ serve(async (req) => {
           return errorResponse(`Insufficient chips. Available: ${balance.available_chips}, Requested: ${chip_amount}`, 400);
         }
 
-        // Calculate WOVER amount (100 chips = 1 WOVER)
+        // 1 CHIP = 1 WOVER (direct 1:1 conversion)
         const wover_amount = chip_amount / CHIPS_PER_WOVER;
 
         // Deduct chips from balance

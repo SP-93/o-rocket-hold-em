@@ -186,9 +186,9 @@
   },
   "chipShop": {
     "title": "Prodavnica Čipova",
-    "subtitle": "Kupujte i prodajte čipove sa USDT ili USDC",
+    "subtitle": "Kupujte i prodajte čipove sa WOVER tokenima",
     "exchange": "Razmena",
-    "exchangeDescription": "Pretvorite tokene u čipove i obrnuto",
+    "exchangeDescription": "Pretvorite WOVER u čipove i obrnuto",
     "deposit": "Uplata",
     "withdraw": "Isplata",
     "availableChips": "Dostupni Čipovi",
@@ -208,7 +208,7 @@
     "enterAmount": "Molimo unesite iznos",
     "infoLine1": "Uplate se obrađuju automatski nakon potvrde na blockchain-u.",
     "infoLine2": "Isplate mogu potrajati do 24 sata za obradu.",
-    "infoLine3": "1 USDT/USDC = 100 Čipova. Minimalna isplata: 100 čipova."
+    "infoLine3": "1 WOVER = 1 ČIP. Micro-stakes stolovi dostupni (0.01/0.02 blindovi)."
   },
   "admin": {
     "title": "Admin Panel",

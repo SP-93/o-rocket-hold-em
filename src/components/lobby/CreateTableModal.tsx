@@ -42,6 +42,14 @@ interface CreateTableModalProps {
 }
 
 const blindOptions = [
+  // Micro-stakes for when WOVER price increases
+  { small: 0.01, big: 0.02, label: '0.01/0.02' },
+  { small: 0.05, big: 0.1, label: '0.05/0.1' },
+  { small: 0.1, big: 0.2, label: '0.1/0.2' },
+  { small: 0.5, big: 1, label: '0.5/1' },
+  // Standard stakes
+  { small: 1, big: 2, label: '1/2' },
+  { small: 2, big: 5, label: '2/5' },
   { small: 5, big: 10, label: '5/10' },
   { small: 10, big: 20, label: '10/20' },
   { small: 25, big: 50, label: '25/50' },
@@ -69,7 +77,7 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
   
   const [tableName, setTableName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<'5' | '6'>('6');
-  const [selectedBlinds, setSelectedBlinds] = useState('10/20');
+  const [selectedBlinds, setSelectedBlinds] = useState('1/2');
   const [isCreating, setIsCreating] = useState(false);
   
   // Private table options
@@ -286,8 +294,8 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
 
           {/* Blinds */}
           <div className="space-y-3">
-            <Label>{t('lobby.blinds')}</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <Label>{t('lobby.blinds')} (CHIP)</Label>
+            <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
               {blindOptions.map((option) => (
                 <Button
                   key={option.label}
@@ -295,7 +303,7 @@ export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTa
                   variant={selectedBlinds === option.label ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setSelectedBlinds(option.label)}
-                  className="font-mono"
+                  className="font-mono text-xs"
                 >
                   {option.label}
                 </Button>

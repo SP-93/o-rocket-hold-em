@@ -28,22 +28,33 @@ const ERC20_ABI = [
 
 // Token addresses from deployment config
 export const TOKEN_ADDRESSES = {
+  // Stablecoins for private table fees only
   USDT: '0xA510432E4aa60B4acd476fb850EC84B7EE226b2d' as `0x${string}`,
   USDC: '0x8712796136Ac8e0EEeC123251ef93702f265aa80' as `0x${string}`,
+  // WOVER (Wrapped OVER) for chip purchases - 1 WOVER = 1 CHIP
+  WOVER: '0x59c914C8ac6F212bb655737CC80d9Abc79A1e273' as `0x${string}`,
 } as const;
 
 // Admin wallet for receiving payments
 export const ADMIN_WALLET = '0x8334966329b7f4b459633696A8CA59118253bC89' as `0x${string}`;
 
-// Token decimals (both are 6)
-export const TOKEN_DECIMALS = 6;
+// Token decimals
+export const STABLECOIN_DECIMALS = 6; // USDT/USDC have 6 decimals
+export const WOVER_DECIMALS = 18; // WOVER has 18 decimals (like ETH)
 
-// Chips per token (1 USDT/USDC = 100 chips)
+// Legacy export for backwards compatibility with private table fees
+export const TOKEN_DECIMALS = STABLECOIN_DECIMALS;
+
+// Chip conversion: 1 WOVER = 1 CHIP (with 18 decimal precision)
+export const CHIPS_PER_WOVER = 1;
+
+// Legacy export - no longer used for chips, but kept for compatibility
 export const CHIPS_PER_TOKEN = 100;
 
 export function useTokenBalance(
   tokenAddress: `0x${string}`,
-  walletAddress: `0x${string}` | undefined
+  walletAddress: `0x${string}` | undefined,
+  decimals: number = STABLECOIN_DECIMALS
 ) {
   const { data, isLoading, refetch } = useReadContract({
     address: tokenAddress,
@@ -55,7 +66,7 @@ export function useTokenBalance(
     },
   });
 
-  const balance = data ? formatUnits(data, TOKEN_DECIMALS) : '0';
+  const balance = data ? formatUnits(data, decimals) : '0';
 
   return {
     balance,
@@ -63,6 +74,11 @@ export function useTokenBalance(
     isLoading,
     refetch,
   };
+}
+
+// Dedicated hook for WOVER balance (for chip purchases)
+export function useWoverBalance(walletAddress: `0x${string}` | undefined) {
+  return useTokenBalance(TOKEN_ADDRESSES.WOVER, walletAddress, WOVER_DECIMALS);
 }
 
 export function useTokenAllowance(
