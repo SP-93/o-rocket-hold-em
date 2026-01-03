@@ -176,25 +176,45 @@ serve(async (req) => {
       }
 
       case 'join_table': {
-        const { table_id, chip_amount } = body;
+        // Support both naming conventions: chip_amount or amount, table_id or tableId
+        const table_id = body.table_id || (body as any).tableId;
+        const chip_amount = body.chip_amount || (body as any).amount;
+        const normalizedWallet = (wallet_address || (body as any).walletAddress || '').toLowerCase();
 
-        if (!wallet_address || !table_id || !chip_amount) {
-          return errorResponse('Missing required fields for join_table', 400);
+        console.log(`[chip-manager] join_table request:`, { table_id, chip_amount, wallet: normalizedWallet });
+
+        if (!normalizedWallet || !table_id || !chip_amount) {
+          return errorResponse('Missing required fields for join_table (walletAddress, tableId, amount)', 400);
         }
 
-        // Get current balance
-        const { data: balance, error: balanceError } = await supabase
+        // Get or create player balance
+        let { data: balance, error: balanceError } = await supabase
           .from('player_balances')
           .select('*')
-          .eq('wallet_address', wallet_address.toLowerCase())
+          .eq('wallet_address', normalizedWallet)
           .single();
 
-        if (balanceError || !balance) {
+        if (balanceError && balanceError.code === 'PGRST116') {
+          // Create new balance record with 0 chips
+          const { data: newBalance, error: insertError } = await supabase
+            .from('player_balances')
+            .insert({ wallet_address: normalizedWallet })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('[chip-manager] Insert error:', insertError);
+            return errorResponse('Failed to create balance', 500);
+          }
+          balance = newBalance;
+        } else if (balanceError) {
+          console.error('[chip-manager] Balance error:', balanceError);
           return errorResponse('Player balance not found', 404);
         }
 
-        if (balance.available_chips < chip_amount) {
-          return errorResponse(`Insufficient chips. Available: ${balance.available_chips}, Required: ${chip_amount}`, 400);
+        if (!balance || balance.available_chips < chip_amount) {
+          const available = balance?.available_chips || 0;
+          return errorResponse(`Insufficient chips. Available: ${available}, Required: ${chip_amount}. Please buy chips first.`, 400);
         }
 
         // Lock chips (move from available to locked)
@@ -204,14 +224,14 @@ serve(async (req) => {
             available_chips: balance.available_chips - chip_amount,
             locked_in_games: balance.locked_in_games + chip_amount,
           })
-          .eq('wallet_address', wallet_address.toLowerCase());
+          .eq('wallet_address', normalizedWallet);
 
         if (updateError) {
           console.error('[chip-manager] Lock chips error:', updateError);
           return errorResponse('Failed to lock chips', 500);
         }
 
-        console.log(`[chip-manager] Locked ${chip_amount} chips for ${wallet_address} at table ${table_id}`);
+        console.log(`[chip-manager] Locked ${chip_amount} chips for ${normalizedWallet} at table ${table_id}`);
         return successResponse({ 
           success: true, 
           locked_chips: chip_amount,

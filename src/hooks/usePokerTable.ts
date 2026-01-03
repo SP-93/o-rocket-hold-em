@@ -195,20 +195,46 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
     };
   }, [tableId]);
 
-  // Join table
+  // Join table - validates chips via chip-manager edge function
   const joinTable = useCallback(async (
     seatNumber: number,
     walletAddress: string,
     playerName?: string,
-    buyIn: number = 1000
+    buyIn: number = 100
   ): Promise<boolean> => {
     try {
+      console.log(`[usePokerTable] Joining table ${tableId}, seat ${seatNumber}, buyIn: ${buyIn}`);
+      
+      // First, validate and lock chips via chip-manager edge function
+      const { data: chipData, error: chipError } = await supabase.functions.invoke('chip-manager', {
+        body: {
+          action: 'join_table',
+          walletAddress: walletAddress.toLowerCase(),
+          tableId,
+          amount: buyIn,
+        },
+      });
+
+      if (chipError) {
+        console.error('[usePokerTable] Chip manager error:', chipError);
+        throw new Error('Failed to lock chips for table');
+      }
+
+      if (!chipData?.success) {
+        console.error('[usePokerTable] Chip validation failed:', chipData?.error);
+        throw new Error(chipData?.error || 'Insufficient chips. Please buy chips first.');
+      }
+
+      console.log('[usePokerTable] Chips locked successfully:', chipData);
+
+      // Now update the seat
       const { error } = await supabase
         .from('table_seats')
         .update({
-          player_wallet: walletAddress,
+          player_wallet: walletAddress.toLowerCase(),
           player_name: playerName || null,
           chip_stack: buyIn,
+          on_chain_buy_in: buyIn,
           is_folded: false,
           last_action: null,
           current_bet: 0,
@@ -217,12 +243,24 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
         .eq('seat_number', seatNumber)
         .is('player_wallet', null);
 
-      if (error) throw error;
+      if (error) {
+        // If seat update failed, we should unlock the chips
+        console.error('[usePokerTable] Seat update failed, unlocking chips:', error);
+        await supabase.functions.invoke('chip-manager', {
+          body: {
+            action: 'leave_table',
+            walletAddress: walletAddress.toLowerCase(),
+            tableId,
+            amount: buyIn,
+          },
+        });
+        throw error;
+      }
 
       // Log action
       await supabase.from('game_actions').insert({
         table_id: tableId,
-        player_wallet: walletAddress,
+        player_wallet: walletAddress.toLowerCase(),
         action: 'join',
         amount: buyIn,
       });

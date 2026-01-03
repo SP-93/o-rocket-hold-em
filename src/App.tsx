@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import ChipShop from "./pages/ChipShop";
 import Tournament from "./pages/Tournament";
 import Tournaments from "./pages/Tournaments";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 // Import i18n configuration
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/chipshop" element={<ChipShop />} />
               <Route path="/tournament/:id" element={<Tournament />} />
               <Route path="/tournaments" element={<Tournaments />} />
+              <Route path="/about" element={<About />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

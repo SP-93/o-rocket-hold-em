@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { WalletButton } from './WalletButton';
-import { Rocket } from 'lucide-react';
+import { useWalletContext } from '@/contexts/WalletContext';
+import { Rocket, Shield } from 'lucide-react';
 
 export function Header() {
   const { t } = useTranslation();
+  const { isAdmin } = useWalletContext();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl">
@@ -39,6 +41,16 @@ export function Header() {
             {t('chipShop.title')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-poker-gold transition-all group-hover:w-full" />
           </Link>
+          {isAdmin && (
+            <Link 
+              to="/admin" 
+              className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors relative group flex items-center gap-1.5"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-destructive transition-all group-hover:w-full" />
+            </Link>
+          )}
         </nav>
 
         {/* Actions */}

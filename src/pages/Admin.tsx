@@ -223,7 +223,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="tables" className="space-y-6">
-          <TabsList className="bg-card/50 border border-border/50">
+          <TabsList className="bg-card/50 border border-border/50 flex-wrap">
             <TabsTrigger value="tables" className="gap-2">
               <Table2 className="h-4 w-4" />
               Tables
@@ -243,6 +243,10 @@ export default function Admin() {
             <TabsTrigger value="payouts" className="gap-2">
               <Wallet className="h-4 w-4" />
               Payouts
+            </TabsTrigger>
+            <TabsTrigger value="contracts" className="gap-2">
+              <Shield className="h-4 w-4" />
+              Contracts
             </TabsTrigger>
           </TabsList>
 
@@ -443,6 +447,101 @@ export default function Admin() {
           {/* Payouts Tab */}
           <TabsContent value="payouts">
             <PayoutManager adminWallet={address || ''} />
+          </TabsContent>
+
+          {/* Contracts Tab */}
+          <TabsContent value="contracts" className="space-y-6">
+            <Card className="border-border/50 bg-card/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  Smart Contract Deployment
+                </CardTitle>
+                <CardDescription>Deploy and manage PokerChipManager contract on Over Protocol</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Deployment Status */}
+                <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                  <h4 className="font-semibold text-foreground mb-3">Current Status</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Network:</span>
+                      <span className="text-foreground font-mono">Over Protocol Mainnet (Chain ID: 54176)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Contract Status:</span>
+                      <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400">Pending Deploy</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Admin Wallet:</span>
+                      <span className="text-foreground font-mono text-xs">0x8334966329b7f4b459633696A8CA59118253bC89</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Token Addresses */}
+                <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                  <h4 className="font-semibold text-foreground mb-3">Token Addresses</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">WOVER (Chips):</span>
+                      <code className="text-xs bg-muted/30 px-2 py-1 rounded">0x59c914C8ac6F212bb655737CC80d9Abc79A1e273</code>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">USDT (Fees):</span>
+                      <code className="text-xs bg-muted/30 px-2 py-1 rounded">0xA510432E4aa60B4acd476fb850EC84B7EE226b2d</code>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">USDC (Fees):</span>
+                      <code className="text-xs bg-muted/30 px-2 py-1 rounded">0x8712796136Ac8e0EEeC123251ef93702f265aa80</code>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Deployment Instructions */}
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-3">📋 Deployment Instructions</h4>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                    <li>Open <code className="bg-muted/30 px-1 rounded">docs/contracts/PokerChipManager.sol</code> in Remix IDE</li>
+                    <li>Compile with Solidity 0.8.19+</li>
+                    <li>Connect MetaMask to Over Protocol Mainnet (RPC: https://rpc.overprotocol.com/)</li>
+                    <li>Deploy with constructor params:
+                      <ul className="list-disc list-inside ml-4 mt-1">
+                        <li>_woverToken: 0x59c914C8ac6F212bb655737CC80d9Abc79A1e273</li>
+                        <li>_usdtToken: 0xA510432E4aa60B4acd476fb850EC84B7EE226b2d</li>
+                        <li>_usdcToken: 0x8712796136Ac8e0EEeC123251ef93702f265aa80</li>
+                        <li>_privateTableFee: 10000000 (10 USDT/USDC with 6 decimals)</li>
+                      </ul>
+                    </li>
+                    <li>After deployment, update contract address in platform_config</li>
+                    <li>Add POKER_CONTRACT_ADDRESS secret in Lovable Cloud</li>
+                  </ol>
+                </div>
+
+                {/* Config Values */}
+                <div className="p-4 rounded-lg bg-background/50 border border-border/30">
+                  <h4 className="font-semibold text-foreground mb-3">Platform Constants</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground block">Chips per WOVER:</span>
+                      <span className="text-foreground font-bold">1 (1:1 ratio)</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">Min Deposit:</span>
+                      <span className="text-foreground font-bold">0.01 WOVER</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">Private Table Fee:</span>
+                      <span className="text-foreground font-bold">10 USDT/USDC</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">Cash Game Rake:</span>
+                      <span className="text-foreground font-bold">2.5%</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
         </Tabs>
