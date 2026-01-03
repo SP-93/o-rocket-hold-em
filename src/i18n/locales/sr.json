@@ -20,7 +20,30 @@
     "players": "igrača",
     "tableFull": "Sto je pun",
     "inProgress": "U toku",
-    "waitingPlayers": "Čeka igrače"
+    "waitingPlayers": "Čeka igrače",
+    "all": "Sve",
+    "send": "Pošalji",
+    "submit": "Pošalji",
+    "create": "Napravi",
+    "connecting": "Povezivanje..."
+  },
+  "tournaments": {
+    "title": "Turniri",
+    "subtitle": "Takmičite se na poker turnirima i osvojite velike nagrade",
+    "noTournaments": "Nema dostupnih turnira",
+    "viewAll": "Pogledaj sve turnire",
+    "registering": "Registracija",
+    "running": "U toku",
+    "finished": "Završen",
+    "cancelled": "Otkazan",
+    "players": "Igrači",
+    "buyIn": "Buy-in",
+    "prizePool": "Nagradni Fond",
+    "startingStack": "Početni Stack",
+    "register": "Registruj se",
+    "unregister": "Odjavi se",
+    "blindLevel": "Nivo Blindova",
+    "nextLevel": "Sledeći Nivo Za"
   },
   "nav": {
     "lobby": "Lobi",

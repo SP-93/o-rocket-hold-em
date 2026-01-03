@@ -1,5 +1,6 @@
 {
   "common": {
+    "all": "All",
     "connectWallet": "Connect Wallet",
     "disconnect": "Disconnect",
     "balance": "Balance",
@@ -20,7 +21,29 @@
     "players": "players",
     "tableFull": "Table Full",
     "inProgress": "In Progress",
-    "waitingPlayers": "Waiting for players"
+    "waitingPlayers": "Waiting for players",
+    "send": "Send",
+    "submit": "Submit",
+    "create": "Create",
+    "connecting": "Connecting..."
+  },
+  "tournaments": {
+    "title": "Tournaments",
+    "subtitle": "Compete in poker tournaments and win big prizes",
+    "noTournaments": "No tournaments available",
+    "viewAll": "View all tournaments",
+    "registering": "Registering",
+    "running": "In Progress",
+    "finished": "Finished",
+    "cancelled": "Cancelled",
+    "players": "Players",
+    "buyIn": "Buy-in",
+    "prizePool": "Prize Pool",
+    "startingStack": "Starting Stack",
+    "register": "Register",
+    "unregister": "Unregister",
+    "blindLevel": "Blind Level",
+    "nextLevel": "Next Level In"
   },
   "nav": {
     "lobby": "Lobby",
