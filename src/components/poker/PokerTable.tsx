@@ -24,6 +24,7 @@ interface PokerTableProps {
   phase: 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
   maxPlayers: 5 | 6;
   className?: string;
+  onSeatClick?: (seatNumber: number) => void;
 }
 
 // Seat positions for 6-player table (oval layout)
@@ -52,6 +53,7 @@ export function PokerTable({
   phase,
   maxPlayers,
   className,
+  onSeatClick,
 }: PokerTableProps) {
   const seatPositions = maxPlayers === 6 ? seatPositions6 : seatPositions5;
 
@@ -75,6 +77,7 @@ export function PokerTable({
             seatNumber={index + 1}
             player={players[index] || undefined}
             position={position}
+            onClick={onSeatClick && !players[index] ? () => onSeatClick(index + 1) : undefined}
           />
         ))}
       </div>

@@ -5,8 +5,8 @@ import { TableCard } from '@/components/lobby/TableCard';
 import { TableFilters } from '@/components/lobby/TableFilters';
 import { CreateTableModal } from '@/components/lobby/CreateTableModal';
 import { Button } from '@/components/ui/button';
-import { mockTables } from '@/data/mockTables';
-import { Plus, RefreshCw } from 'lucide-react';
+import { usePokerLobby } from '@/hooks/usePokerLobby';
+import { Plus, RefreshCw, Loader2 } from 'lucide-react';
 
 type FilterType = 'all' | '5' | '6';
 
@@ -14,18 +14,21 @@ export default function Lobby() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterType>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const { tables, loading, refetch, createTable } = usePokerLobby();
 
   const filteredTables = useMemo(() => {
-    if (filter === 'all') return mockTables;
-    return mockTables.filter((table) => table.maxPlayers === parseInt(filter));
-  }, [filter]);
+    if (filter === 'all') return tables;
+    return tables.filter((table) => table.max_players === parseInt(filter));
+  }, [filter, tables]);
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // TODO: Refresh from Supabase
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setIsRefreshing(false);
+    await refetch();
+  };
+
+  const handleCreateTable = async (name: string, maxPlayers: 5 | 6, smallBlind: number, bigBlind: number) => {
+    const tableId = await createTable(name, maxPlayers, smallBlind, bigBlind);
+    return tableId;
   };
 
   return (
@@ -49,9 +52,9 @@ export default function Lobby() {
               variant="outline"
               size="icon"
               onClick={handleRefresh}
-              disabled={isRefreshing}
+              disabled={loading}
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
@@ -72,11 +75,28 @@ export default function Lobby() {
           />
         </div>
 
-        {/* Table Grid */}
-        {filteredTables.length > 0 ? (
+        {/* Loading state */}
+        {loading && tables.length === 0 ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filteredTables.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTables.map((table) => (
-              <TableCard key={table.id} table={table} />
+              <TableCard 
+                key={table.id} 
+                table={{
+                  id: table.id,
+                  name: table.name,
+                  maxPlayers: table.max_players as 5 | 6,
+                  currentPlayers: table.current_players,
+                  smallBlind: table.small_blind,
+                  bigBlind: table.big_blind,
+                  avgPot: table.avg_pot,
+                  status: table.status,
+                  createdAt: new Date(table.created_at),
+                }} 
+              />
             ))}
           </div>
         ) : (
@@ -99,6 +119,7 @@ export default function Lobby() {
       <CreateTableModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
+        onCreateTable={handleCreateTable}
       />
     </div>
   );

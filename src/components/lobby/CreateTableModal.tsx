@@ -19,6 +19,7 @@ import { Loader2 } from 'lucide-react';
 interface CreateTableModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreateTable: (name: string, maxPlayers: 5 | 6, smallBlind: number, bigBlind: number) => Promise<string | null>;
 }
 
 const blindOptions = [
@@ -29,7 +30,7 @@ const blindOptions = [
   { small: 100, big: 200, label: '100/200' },
 ];
 
-export function CreateTableModal({ open, onOpenChange }: CreateTableModalProps) {
+export function CreateTableModal({ open, onOpenChange, onCreateTable }: CreateTableModalProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   
@@ -41,8 +42,8 @@ export function CreateTableModal({ open, onOpenChange }: CreateTableModalProps) 
   const handleCreate = async () => {
     if (!tableName.trim()) {
       toast({
-        title: 'Greška',
-        description: 'Unesite ime stola',
+        title: 'Error',
+        description: 'Please enter a table name',
         variant: 'destructive',
       });
       return;
@@ -50,19 +51,31 @@ export function CreateTableModal({ open, onOpenChange }: CreateTableModalProps) 
 
     setIsCreating(true);
 
-    // TODO: Replace with Supabase call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const blindOption = blindOptions.find(b => b.label === selectedBlinds) || blindOptions[1];
+    const tableId = await onCreateTable(
+      tableName,
+      parseInt(maxPlayers) as 5 | 6,
+      blindOption.small,
+      blindOption.big
+    );
 
-    toast({
-      title: 'Sto kreiran!',
-      description: `${tableName} je spreman za igru`,
-    });
+    if (tableId) {
+      toast({
+        title: 'Table created!',
+        description: `${tableName} is ready to play`,
+      });
+      onOpenChange(false);
+      setTableName('');
+      navigate(`/table/${tableId}`);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to create table',
+        variant: 'destructive',
+      });
+    }
 
     setIsCreating(false);
-    onOpenChange(false);
-    
-    // Navigate to the new table (mock ID for now)
-    navigate(`/table/new-${Date.now()}`);
   };
 
   return (
@@ -73,17 +86,17 @@ export function CreateTableModal({ open, onOpenChange }: CreateTableModalProps) 
             {t('lobby.createTable')}
           </DialogTitle>
           <DialogDescription>
-            Podesi parametre za novi poker sto
+            Set up parameters for a new poker table
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Table Name */}
           <div className="space-y-2">
-            <Label htmlFor="tableName">Ime stola</Label>
+            <Label htmlFor="tableName">Table Name</Label>
             <Input
               id="tableName"
-              placeholder="npr. High Rollers"
+              placeholder="e.g. High Rollers"
               value={tableName}
               onChange={(e) => setTableName(e.target.value)}
               className="font-body"
@@ -92,7 +105,7 @@ export function CreateTableModal({ open, onOpenChange }: CreateTableModalProps) 
 
           {/* Max Players */}
           <div className="space-y-3">
-            <Label>Broj igrača</Label>
+            <Label>Number of Players</Label>
             <RadioGroup
               value={maxPlayers}
               onValueChange={(value) => setMaxPlayers(value as '5' | '6')}
@@ -101,13 +114,13 @@ export function CreateTableModal({ open, onOpenChange }: CreateTableModalProps) 
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="5" id="players-5" />
                 <Label htmlFor="players-5" className="cursor-pointer">
-                  5 igrača
+                  5 players
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="6" id="players-6" />
                 <Label htmlFor="players-6" className="cursor-pointer">
-                  6 igrača
+                  6 players
                 </Label>
               </div>
             </RadioGroup>
