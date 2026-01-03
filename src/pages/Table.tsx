@@ -5,7 +5,9 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PokerTable, ActionButtons } from '@/components/poker';
+import { TableChat } from '@/components/poker/TableChat';
 import { usePokerTable } from '@/hooks/usePokerTable';
+import { useTableChat } from '@/hooks/useTableChat';
 import { useWallet } from '@/hooks/useWallet';
 import { toast } from '@/hooks/use-toast';
 import { Card } from '@/types/poker';
@@ -14,6 +16,7 @@ export default function Table() {
   const { id } = useParams();
   const { t } = useTranslation();
   const { table, seats, loading, error, joinTable, leaveTable, performAction } = usePokerTable(id || '');
+  const { messages, sendMessage } = useTableChat(id || '');
   const { address, isConnected } = useWallet();
 
   // Find current player's seat
@@ -184,6 +187,15 @@ export default function Table() {
           <div className="text-center py-4">
             <p className="text-muted-foreground">Connect your wallet to join the game</p>
           </div>
+        )}
+
+        {/* Table Chat */}
+        {isConnected && address && (
+          <TableChat
+            messages={messages}
+            onSendMessage={(msg) => sendMessage(msg, address, playerSeat?.player_name || undefined)}
+            currentWallet={address}
+          />
         )}
       </main>
     </div>
