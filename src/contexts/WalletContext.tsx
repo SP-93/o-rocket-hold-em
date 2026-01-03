@@ -1,25 +1,18 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { useWallet } from '@/hooks/useWallet';
-import { useWalletProviders } from '@/hooks/useWalletProviders';
-import { EIP6963ProviderDetail } from '@/types/wallet';
+import React, { createContext, useContext, ReactNode, useCallback, useState } from 'react';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { useWagmiWallet } from '@/hooks/useWagmiWallet';
 
 interface WalletContextType {
   // State
   address: string | null;
   isConnected: boolean;
   isConnecting: boolean;
-  chainId: number | null;
+  chainId: number | undefined;
   isCorrectNetwork: boolean;
   woverBalance: string;
-  error: string | null;
-  selectedProvider: EIP6963ProviderDetail | null;
   
-  // Providers
-  providers: EIP6963ProviderDetail[];
-  isDetectingProviders: boolean;
-  hasOverFlex: boolean;
-  hasMetaMask: boolean;
-  hasAnyWallet: boolean;
+  // Connector info
+  connectorInfo: { name: string; icon?: string } | null;
   
   // Modal
   isModalOpen: boolean;
@@ -27,7 +20,6 @@ interface WalletContextType {
   closeConnectModal: () => void;
   
   // Actions
-  connect: (provider: EIP6963ProviderDetail) => Promise<void>;
   disconnect: () => void;
   switchNetwork: () => Promise<void>;
 }
@@ -35,30 +27,20 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const wallet = useWallet();
-  const walletProviders = useWalletProviders();
+  const wallet = useWagmiWallet();
+  const { open } = useWeb3Modal();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const openConnectModal = useCallback(() => setIsModalOpen(true), []);
+  const openConnectModal = useCallback(() => {
+    // Try Web3Modal first, fallback to state
+    try {
+      open();
+    } catch {
+      setIsModalOpen(true);
+    }
+  }, [open]);
+
   const closeConnectModal = useCallback(() => setIsModalOpen(false), []);
-
-  // Auto-reconnect to last used wallet
-  useEffect(() => {
-    const lastWalletRdns = localStorage.getItem('lastWalletRdns');
-    if (lastWalletRdns && !wallet.isConnected && !walletProviders.isDetecting) {
-      const provider = walletProviders.getProviderByRdns(lastWalletRdns);
-      if (provider) {
-        wallet.connect(provider);
-      }
-    }
-  }, [walletProviders.isDetecting, walletProviders.providers]);
-
-  // Close modal on successful connection
-  useEffect(() => {
-    if (wallet.isConnected) {
-      closeConnectModal();
-    }
-  }, [wallet.isConnected, closeConnectModal]);
 
   const value: WalletContextType = {
     // Wallet state
@@ -68,15 +50,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     chainId: wallet.chainId,
     isCorrectNetwork: wallet.isCorrectNetwork,
     woverBalance: wallet.woverBalance,
-    error: wallet.error,
-    selectedProvider: wallet.selectedProvider,
     
-    // Providers
-    providers: walletProviders.providers,
-    isDetectingProviders: walletProviders.isDetecting,
-    hasOverFlex: walletProviders.hasOverFlex,
-    hasMetaMask: walletProviders.hasMetaMask,
-    hasAnyWallet: walletProviders.hasAnyWallet,
+    // Connector info
+    connectorInfo: wallet.connectorInfo,
     
     // Modal
     isModalOpen,
@@ -84,7 +60,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     closeConnectModal,
     
     // Actions
-    connect: wallet.connect,
     disconnect: wallet.disconnect,
     switchNetwork: wallet.switchNetwork,
   };

@@ -8,7 +8,7 @@ import { PokerTable, ActionButtons } from '@/components/poker';
 import { TableChat } from '@/components/poker/TableChat';
 import { usePokerTable } from '@/hooks/usePokerTable';
 import { useTableChat } from '@/hooks/useTableChat';
-import { useWallet } from '@/hooks/useWallet';
+import { useWalletContext } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
 import { Card } from '@/types/poker';
 
@@ -17,7 +17,7 @@ export default function Table() {
   const { t } = useTranslation();
   const { table, seats, loading, error, joinTable, leaveTable, performAction } = usePokerTable(id || '');
   const { messages, sendMessage } = useTableChat(id || '');
-  const { address, isConnected } = useWallet();
+  const { address, isConnected } = useWalletContext();
 
   // Find current player's seat
   const playerSeat = seats.find(s => s.player_wallet?.toLowerCase() === address?.toLowerCase());

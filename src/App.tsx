@@ -1,8 +1,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Web3Provider } from "@/components/Web3Provider";
 import { WalletProvider } from "@/contexts/WalletContext";
 import Index from "./pages/Index";
 import Lobby from "./pages/Lobby";
@@ -12,10 +12,8 @@ import NotFound from "./pages/NotFound";
 // Import i18n configuration
 import "./i18n";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <Web3Provider>
     <WalletProvider>
       <TooltipProvider>
         <div className="dark">
@@ -33,7 +31,7 @@ const App = () => (
         </div>
       </TooltipProvider>
     </WalletProvider>
-  </QueryClientProvider>
+  </Web3Provider>
 );
 
 export default App;
