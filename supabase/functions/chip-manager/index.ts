@@ -9,6 +9,9 @@ const corsHeaders = {
 // Constants matching smart contract
 const CHIPS_PER_WOVER = 100;
 
+// Admin wallet - owner of smart contract (for verification and logging)
+const ADMIN_WALLET_ADDRESS = '0x8334966329b7f4b459633696A8CA59118253bC89';
+
 interface ActionRequest {
   action: 'get_balance' | 'verify_deposit' | 'join_table' | 'leave_table' | 'process_settlement' | 'sync_balance';
   wallet_address?: string;

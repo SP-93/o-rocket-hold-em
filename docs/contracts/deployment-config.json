@@ -1,0 +1,52 @@
+{
+  "network": {
+    "name": "Over Protocol Mainnet",
+    "chainId": 54176,
+    "rpc": "https://rpc.overprotocol.com/",
+    "explorer": "https://explorer.overprotocol.com/"
+  },
+  "admin": {
+    "address": "0x8334966329b7f4b459633696A8CA59118253bC89",
+    "role": "Contract Owner + Backend Signer",
+    "description": "Koristi se za deploy, ownership, lockChipsToTable, settleGame, emergencyUnlock"
+  },
+  "contracts": {
+    "pokerChipManager": {
+      "status": "pending",
+      "address": null,
+      "deployedAt": null,
+      "deployedBy": "0x8334966329b7f4b459633696A8CA59118253bC89"
+    },
+    "woverToken": {
+      "status": "pending",
+      "address": null,
+      "note": "ERC-20 token adresa na Over Protocol"
+    }
+  },
+  "constants": {
+    "CHIPS_PER_WOVER": 100,
+    "MIN_DEPOSIT_WEI": "1000000000000000000",
+    "MIN_DEPOSIT_WOVER": 1,
+    "MIN_WITHDRAWAL_CHIPS": 100
+  },
+  "supabaseSecrets": {
+    "required": [
+      {
+        "name": "ADMIN_WALLET_PRIVATE_KEY",
+        "description": "Privatni ključ admin wallet-a za potpisivanje transakcija",
+        "status": "pending"
+      },
+      {
+        "name": "POKER_CONTRACT_ADDRESS",
+        "description": "Adresa deploy-ovanog PokerChipManager contract-a",
+        "status": "pending"
+      },
+      {
+        "name": "WOVER_TOKEN_ADDRESS",
+        "description": "Adresa WOVER ERC-20 tokena na Over Protocol",
+        "status": "pending"
+      }
+    ]
+  },
+  "lastUpdated": "2026-01-03"
+}

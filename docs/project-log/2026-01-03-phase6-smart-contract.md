@@ -118,10 +118,25 @@ Glavni contract za WOVER ↔ chip konverziju:
 
 ---
 
+## Admin Wallet Konfiguracija
+
+| Info | Vrednost |
+|------|----------|
+| Adresa | `0x8334966329b7f4b459633696A8CA59118253bC89` |
+| Uloga | Contract Owner, Settlement Signer |
+| Mreža | Over Protocol Mainnet (Chain ID: 54176) |
+
+**Secrets za konfiguraciju (Supabase):**
+- `ADMIN_WALLET_PRIVATE_KEY` - Privatni ključ (NIKAD u kodu!)
+- `POKER_CONTRACT_ADDRESS` - Posle deploymenta
+- `WOVER_TOKEN_ADDRESS` - WOVER ERC-20 token adresa
+
+---
+
 ## Napomene
 
-1. **Admin wallet** će biti hardcoded u backend secrets (ADMIN_WALLET_PRIVATE_KEY)
-2. **Contract adresa** će biti u POKER_CONTRACT_ADDRESS secret
+1. **Admin wallet** je konfigurisan: `0x8334966329b7f4b459633696A8CA59118253bC89`
+2. **Contract adresa** će biti u POKER_CONTRACT_ADDRESS secret posle deploymenta
 3. **WOVER token adresa** će biti u WOVER_TOKEN_ADDRESS secret
 4. Gameplay je potpuno off-chain, samo deposit/withdraw su on-chain
 5. Settlement se za sada radi samo u bazi, on-chain settlement je prepared ali nije aktivan
