@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
 import { useWalletContext } from '@/contexts/WalletContext';
+import { PokerCardSVG } from '@/components/poker/PokerCardSVG';
 import { Rocket, Coins, Users, Shield, ChevronRight, Sparkles } from 'lucide-react';
 
 const fadeInUp = {
@@ -40,30 +41,34 @@ export default function Index() {
       <section className="relative min-h-[85vh] flex items-center">
         {/* Animated background layers */}
         <div className="absolute inset-0 bg-gradient-to-br from-poker-felt/20 via-background to-background" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.12),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--poker-gold)/0.08),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.15),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--poker-gold)/0.1),transparent_60%)]" />
         
-        {/* Floating poker decorations */}
+        {/* Floating poker card decorations - replacing blur circles */}
         <motion.div 
-          className="absolute top-24 left-[8%] w-20 h-28 rounded-xl bg-gradient-to-br from-card-suit-red/30 to-card-suit-red/10 rotate-12 blur-sm"
+          className="absolute top-20 left-[8%] w-16 h-24 opacity-60"
           animate={floatAnimation}
-        />
+        >
+          <PokerCardSVG suit="spades" rank="A" className="w-full h-full" />
+        </motion.div>
         <motion.div 
-          className="absolute top-32 right-[12%] w-16 h-24 rounded-xl bg-gradient-to-br from-foreground/20 to-foreground/5 -rotate-12 blur-sm"
+          className="absolute top-28 right-[10%] w-14 h-20 -rotate-12 opacity-50"
           animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 1 } }}
-        />
+        >
+          <PokerCardSVG suit="hearts" rank="K" className="w-full h-full" />
+        </motion.div>
         <motion.div 
-          className="absolute bottom-40 left-[20%] w-14 h-14 rounded-full bg-gradient-to-br from-chip-green/40 to-chip-green/10"
+          className="absolute bottom-32 left-[15%] w-12 h-18 rotate-6 opacity-40"
           animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 0.5 } }}
-        />
+        >
+          <PokerCardSVG suit="diamonds" rank="Q" className="w-full h-full" />
+        </motion.div>
         <motion.div 
-          className="absolute bottom-32 right-[25%] w-12 h-12 rounded-full bg-gradient-to-br from-poker-gold/40 to-poker-gold/10"
+          className="absolute bottom-40 right-[18%] w-10 h-15 -rotate-6 opacity-35"
           animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 1.5 } }}
-        />
-        <motion.div 
-          className="absolute top-1/3 right-[6%] w-10 h-10 rounded-full bg-gradient-to-br from-chip-blue/40 to-chip-blue/10"
-          animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 2 } }}
-        />
+        >
+          <PokerCardSVG suit="clubs" rank="J" className="w-full h-full" />
+        </motion.div>
         
         <div className="container relative z-10 py-16">
           <motion.div 

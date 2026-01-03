@@ -7,6 +7,7 @@ import { WalletProvider } from "@/contexts/WalletContext";
 import Index from "./pages/Index";
 import Lobby from "./pages/Lobby";
 import Table from "./pages/Table";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 // Import i18n configuration
@@ -24,6 +25,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/lobby" element={<Lobby />} />
               <Route path="/table/:id" element={<Table />} />
+              <Route path="/admin" element={<Admin />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

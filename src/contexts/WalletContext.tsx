@@ -1,6 +1,8 @@
 import React, { createContext, useContext, ReactNode, useCallback, useState } from 'react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
 import { useWagmiWallet } from '@/hooks/useWagmiWallet';
+import { usePlayerProfile } from '@/hooks/usePlayerProfile';
+import { UsernameModal } from '@/components/UsernameModal';
 
 interface WalletContextType {
   // State
@@ -10,6 +12,11 @@ interface WalletContextType {
   chainId: number | undefined;
   isCorrectNetwork: boolean;
   woverBalance: string;
+  
+  // Player profile
+  username: string | null;
+  isAdmin: boolean;
+  profileLoading: boolean;
   
   // Connector info
   connectorInfo: { name: string; icon?: string } | null;
@@ -31,8 +38,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const { open } = useWeb3Modal();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Player profile integration
+  const { 
+    profile, 
+    isAdmin, 
+    isLoading: profileLoading, 
+    needsUsername,
+    createProfile,
+    checkUsernameAvailable,
+  } = usePlayerProfile(wallet.address);
+
   const openConnectModal = useCallback(() => {
-    // Try Web3Modal first, fallback to state
     try {
       open();
     } catch {
@@ -51,6 +67,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     isCorrectNetwork: wallet.isCorrectNetwork,
     woverBalance: wallet.woverBalance,
     
+    // Player profile
+    username: profile?.username ?? null,
+    isAdmin,
+    profileLoading,
+    
     // Connector info
     connectorInfo: wallet.connectorInfo,
     
@@ -67,6 +88,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   return (
     <WalletContext.Provider value={value}>
       {children}
+      
+      {/* Username Modal - shows when connected but no profile */}
+      <UsernameModal
+        open={wallet.isConnected && needsUsername && !profileLoading}
+        onSubmit={createProfile}
+        checkAvailability={checkUsernameAvailable}
+      />
     </WalletContext.Provider>
   );
 }
