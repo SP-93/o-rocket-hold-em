@@ -154,6 +154,8 @@
     "fullPot": "Pot",
     "leave": "Leave Table",
     "waitingForTurn": "Waiting for your turn...",
+    "yourTurn": "It's Your Turn!",
+    "makeYourMove": "Make your move - Fold, Check, Call, or Raise",
     "sidePot": "Side Pot",
     "dealingCards": "Dealing cards...",
     "backToLobby": "Back to Lobby",

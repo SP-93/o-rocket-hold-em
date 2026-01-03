@@ -155,6 +155,8 @@
     "fullPot": "Pot",
     "leave": "Napusti sto",
     "waitingForTurn": "Čekaj svoj potez...",
+    "yourTurn": "Tvoj je red!",
+    "makeYourMove": "Napravi potez - Baci, Ček, Prati ili Povisi",
     "sidePot": "Sporedni pot",
     "dealingCards": "Deljenje karata...",
     "backToLobby": "Nazad u lobi",

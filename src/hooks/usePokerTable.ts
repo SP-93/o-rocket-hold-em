@@ -274,7 +274,7 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
     }
   }, [tableId, seats]);
 
-  // Perform action
+  // Perform action via poker-game edge function
   const performAction = useCallback(async (
     seatNumber: number,
     action: 'fold' | 'check' | 'call' | 'raise' | 'all-in',
@@ -284,44 +284,36 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
       const seat = seats.find(s => s.seat_number === seatNumber);
       if (!seat?.player_wallet) return false;
 
-      const updates: Record<string, any> = {
-        last_action: action,
-        is_turn: false,
-      };
+      console.log(`[usePokerTable] Performing action: ${action} for seat ${seatNumber}`);
 
-      if (action === 'fold') {
-        updates.is_folded = true;
-      } else if (action === 'all-in') {
-        updates.current_bet = seat.chip_stack;
-        updates.chip_stack = 0;
-      } else if (amount !== undefined) {
-        updates.current_bet = amount;
-        updates.chip_stack = seat.chip_stack - amount;
-      }
-
-      const { error } = await supabase
-        .from('table_seats')
-        .update(updates)
-        .eq('table_id', tableId)
-        .eq('seat_number', seatNumber);
-
-      if (error) throw error;
-
-      // Log action
-      await supabase.from('game_actions').insert({
-        table_id: tableId,
-        player_wallet: seat.player_wallet,
-        action,
-        amount,
-        phase: table?.current_phase,
+      const { data, error } = await supabase.functions.invoke('poker-game', {
+        body: {
+          action: 'process_action',
+          tableId,
+          seatNumber,
+          walletAddress: seat.player_wallet,
+          playerAction: action,
+          amount,
+        },
       });
 
+      if (error) {
+        console.error('[usePokerTable] Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('[usePokerTable] Game error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('[usePokerTable] Action result:', data);
       return true;
     } catch (err) {
       console.error('Error performing action:', err);
       return false;
     }
-  }, [tableId, seats, table]);
+  }, [tableId, seats]);
 
   return {
     table,
