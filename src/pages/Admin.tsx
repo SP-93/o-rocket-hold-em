@@ -22,10 +22,12 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Wallet
 } from 'lucide-react';
 import { TournamentManager } from '@/components/admin/TournamentManager';
 import { UserManager } from '@/components/admin/UserManager';
+import { PayoutManager } from '@/components/admin/PayoutManager';
 
 interface TableData {
   id: string;
@@ -238,6 +240,10 @@ export default function Admin() {
               <Users className="h-4 w-4" />
               Users
             </TabsTrigger>
+            <TabsTrigger value="payouts" className="gap-2">
+              <Wallet className="h-4 w-4" />
+              Payouts
+            </TabsTrigger>
           </TabsList>
 
           {/* Tables Tab */}
@@ -432,6 +438,11 @@ export default function Admin() {
           {/* Users Tab */}
           <TabsContent value="users">
             <UserManager />
+          </TabsContent>
+
+          {/* Payouts Tab */}
+          <TabsContent value="payouts">
+            <PayoutManager adminWallet={address || ''} />
           </TabsContent>
 
         </Tabs>
