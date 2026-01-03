@@ -11,15 +11,23 @@
     "description": "Koristi se za deploy, ownership, lockChipsToTable, settleGame, emergencyUnlock"
   },
   "tokens": {
+    "WOVER": {
+      "address": "0x59c914C8ac6F212bb655737CC80d9Abc79A1e273",
+      "decimals": 18,
+      "network": "Over Protocol",
+      "note": "Wrapped OVER - koristi se za kupovinu cipova (1 WOVER = 1 CHIP)"
+    },
     "USDT": {
       "address": "0xA510432E4aa60B4acd476fb850EC84B7EE226b2d",
       "decimals": 6,
-      "network": "Over Protocol"
+      "network": "Over Protocol",
+      "note": "Koristi se samo za fee pri kreiranju privatnih stolova"
     },
     "USDC": {
       "address": "0x8712796136Ac8e0EEeC123251ef93702f265aa80",
       "decimals": 6,
-      "network": "Over Protocol"
+      "network": "Over Protocol",
+      "note": "Koristi se samo za fee pri kreiranju privatnih stolova"
     }
   },
   "contracts": {
@@ -28,11 +36,6 @@
       "address": null,
       "deployedAt": null,
       "deployedBy": "0x8334966329b7f4b459633696A8CA59118253bC89"
-    },
-    "woverToken": {
-      "status": "pending",
-      "address": null,
-      "note": "ERC-20 token adresa na Over Protocol"
     }
   },
   "fees": {
@@ -46,10 +49,11 @@
     "cashGameRakePercent": 2.5
   },
   "constants": {
-    "CHIPS_PER_WOVER": 100,
-    "MIN_DEPOSIT_WEI": "1000000000000000000",
-    "MIN_DEPOSIT_WOVER": 1,
-    "MIN_WITHDRAWAL_CHIPS": 100
+    "CHIPS_PER_WOVER": 1,
+    "MIN_DEPOSIT_WEI": "10000000000000000",
+    "MIN_DEPOSIT_WOVER": 0.01,
+    "MIN_WITHDRAWAL_CHIPS": 0.01,
+    "note": "1 WOVER = 1 CHIP sa 18 decimala. Podrzava micro-stakes (0.01 chip blinds)"
   },
   "supabaseSecrets": {
     "required": [
@@ -61,11 +65,6 @@
       {
         "name": "POKER_CONTRACT_ADDRESS",
         "description": "Adresa deploy-ovanog PokerChipManager contract-a",
-        "status": "pending"
-      },
-      {
-        "name": "WOVER_TOKEN_ADDRESS",
-        "description": "Adresa WOVER ERC-20 tokena na Over Protocol",
         "status": "pending"
       }
     ]

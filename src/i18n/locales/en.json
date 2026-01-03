@@ -185,9 +185,9 @@
   },
   "chipShop": {
     "title": "Chip Shop",
-    "subtitle": "Buy and sell chips with USDT or USDC",
+    "subtitle": "Buy and sell chips with WOVER tokens",
     "exchange": "Exchange",
-    "exchangeDescription": "Convert tokens to chips and vice versa",
+    "exchangeDescription": "Convert WOVER to chips and vice versa",
     "deposit": "Deposit",
     "withdraw": "Withdraw",
     "availableChips": "Available Chips",
@@ -207,7 +207,7 @@
     "enterAmount": "Please enter an amount",
     "infoLine1": "Deposits are processed automatically after blockchain confirmation.",
     "infoLine2": "Withdrawals may take up to 24 hours for processing.",
-    "infoLine3": "1 USDT/USDC = 100 Chips. Minimum withdrawal: 100 chips."
+    "infoLine3": "1 WOVER = 1 CHIP. Micro-stakes tables available (0.01/0.02 blinds)."
   },
   "admin": {
     "title": "Admin Panel",

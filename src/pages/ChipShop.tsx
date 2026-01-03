@@ -1,16 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { useWalletContext } from '@/contexts/WalletContext';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useChipBalance } from '@/hooks/useChipBalance';
-import { useTokenBalance, TOKEN_ADDRESSES, ADMIN_WALLET, CHIPS_PER_TOKEN, TOKEN_DECIMALS } from '@/hooks/useTokenBalance';
+import { useWoverBalance, TOKEN_ADDRESSES, ADMIN_WALLET, WOVER_DECIMALS } from '@/hooks/useTokenBalance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Coins, ArrowDownToLine, ArrowUpFromLine, Wallet, RefreshCw, Info, CircleDollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseUnits } from 'viem';
@@ -29,28 +28,20 @@ const ERC20_TRANSFER_ABI = [
   },
 ] as const;
 
-type TokenType = 'USDT' | 'USDC';
-
 export default function ChipShop() {
   const { t } = useTranslation();
   const { address, isConnected, openConnectModal } = useWalletContext();
   const { balance: chipBalance, isLoading: chipsLoading, refetch: refetchChips } = useChipBalance();
   
-  const [selectedToken, setSelectedToken] = useState<TokenType>('USDT');
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
 
-  // Token balances
-  const { balance: usdtBalance, isLoading: usdtLoading, refetch: refetchUsdt } = useTokenBalance(
-    TOKEN_ADDRESSES.USDT,
-    address as `0x${string}` | undefined
-  );
-  const { balance: usdcBalance, isLoading: usdcLoading, refetch: refetchUsdc } = useTokenBalance(
-    TOKEN_ADDRESSES.USDC,
+  // WOVER balance for chip purchases (1 WOVER = 1 CHIP)
+  const { balance: woverBalance, isLoading: woverLoading, refetch: refetchWover } = useWoverBalance(
     address as `0x${string}` | undefined
   );
 
-  // Write contract for token transfer
+  // Write contract for WOVER transfer
   const { writeContract, data: txHash, isPending: isTxPending } = useWriteContract();
   
   // Wait for transaction
@@ -58,11 +49,9 @@ export default function ChipShop() {
     hash: txHash,
   });
 
-  const currentTokenBalance = selectedToken === 'USDT' ? usdtBalance : usdcBalance;
-  const tokenAddress = TOKEN_ADDRESSES[selectedToken];
-  
-  const chipsFromDeposit = depositAmount ? parseFloat(depositAmount) * CHIPS_PER_TOKEN : 0;
-  const tokensFromWithdraw = withdrawAmount ? parseFloat(withdrawAmount) / CHIPS_PER_TOKEN : 0;
+  // 1 WOVER = 1 CHIP
+  const chipsFromDeposit = depositAmount ? parseFloat(depositAmount) : 0;
+  const woverFromWithdraw = withdrawAmount ? parseFloat(withdrawAmount) : 0;
 
   const handleDeposit = async () => {
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
@@ -70,16 +59,16 @@ export default function ChipShop() {
       return;
     }
 
-    if (parseFloat(depositAmount) > parseFloat(currentTokenBalance)) {
+    if (parseFloat(depositAmount) > parseFloat(woverBalance)) {
       toast.error(t('errors.insufficientBalance'));
       return;
     }
 
     try {
-      const amountWei = parseUnits(depositAmount, TOKEN_DECIMALS);
+      const amountWei = parseUnits(depositAmount, WOVER_DECIMALS);
       
       writeContract({
-        address: tokenAddress,
+        address: TOKEN_ADDRESSES.WOVER,
         abi: ERC20_TRANSFER_ABI,
         functionName: 'transfer',
         args: [ADMIN_WALLET, amountWei],
@@ -110,7 +99,6 @@ export default function ChipShop() {
         body: {
           wallet_address: address,
           chip_amount: parseFloat(withdrawAmount),
-          token_type: selectedToken,
         },
       });
 
@@ -127,8 +115,7 @@ export default function ChipShop() {
 
   const refreshBalances = () => {
     refetchChips();
-    refetchUsdt();
-    refetchUsdc();
+    refetchWover();
     toast.success(t('chipShop.balancesRefreshed'));
   };
 
@@ -193,7 +180,7 @@ export default function ChipShop() {
                   <div>
                     <p className="text-sm text-muted-foreground">{t('chipShop.availableChips')}</p>
                     <p className="text-3xl font-bold text-poker-gold">
-                      {chipsLoading ? '...' : chipBalance?.availableChips.toLocaleString() ?? 0}
+                      {chipsLoading ? '...' : chipBalance?.availableChips.toLocaleString(undefined, { maximumFractionDigits: 4 }) ?? 0}
                     </p>
                   </div>
                   <Coins className="w-10 h-10 text-poker-gold/60" />
@@ -207,7 +194,7 @@ export default function ChipShop() {
                   <div>
                     <p className="text-sm text-muted-foreground">{t('chipShop.lockedInGames')}</p>
                     <p className="text-3xl font-bold text-primary">
-                      {chipsLoading ? '...' : chipBalance?.lockedInGames.toLocaleString() ?? 0}
+                      {chipsLoading ? '...' : chipBalance?.lockedInGames.toLocaleString(undefined, { maximumFractionDigits: 4 }) ?? 0}
                     </p>
                   </div>
                   <CircleDollarSign className="w-10 h-10 text-primary/60" />
@@ -217,19 +204,14 @@ export default function ChipShop() {
 
             <Card className="border-border">
               <CardContent className="pt-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">USDT</span>
-                    <span className="font-mono font-medium">
-                      {usdtLoading ? '...' : parseFloat(usdtBalance).toFixed(2)}
-                    </span>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">WOVER {t('common.balance')}</p>
+                    <p className="text-3xl font-bold font-mono">
+                      {woverLoading ? '...' : parseFloat(woverBalance).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">USDC</span>
-                    <span className="font-mono font-medium">
-                      {usdcLoading ? '...' : parseFloat(usdcBalance).toFixed(2)}
-                    </span>
-                  </div>
+                  <CircleDollarSign className="w-10 h-10 text-muted-foreground/60" />
                 </div>
               </CardContent>
             </Card>
@@ -255,30 +237,12 @@ export default function ChipShop() {
                 </TabsList>
 
                 <TabsContent value="deposit" className="space-y-6">
-                  {/* Token Selection */}
-                  <div className="flex gap-2">
-                    <Badge
-                      variant={selectedToken === 'USDT' ? 'default' : 'outline'}
-                      className="cursor-pointer px-4 py-2 text-sm"
-                      onClick={() => setSelectedToken('USDT')}
-                    >
-                      USDT
-                    </Badge>
-                    <Badge
-                      variant={selectedToken === 'USDC' ? 'default' : 'outline'}
-                      className="cursor-pointer px-4 py-2 text-sm"
-                      onClick={() => setSelectedToken('USDC')}
-                    >
-                      USDC
-                    </Badge>
-                  </div>
-
                   {/* Amount Input */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">{t('chipShop.amount')}</label>
+                      <label className="text-sm font-medium">{t('chipShop.amount')} (WOVER)</label>
                       <span className="text-xs text-muted-foreground">
-                        {t('chipShop.balance')}: {parseFloat(currentTokenBalance).toFixed(2)} {selectedToken}
+                        {t('chipShop.balance')}: {parseFloat(woverBalance).toLocaleString(undefined, { maximumFractionDigits: 4 })} WOVER
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -288,11 +252,11 @@ export default function ChipShop() {
                         value={depositAmount}
                         onChange={(e) => setDepositAmount(e.target.value)}
                         min="0"
-                        step="0.01"
+                        step="0.0001"
                       />
                       <Button
                         variant="outline"
-                        onClick={() => setDepositAmount(currentTokenBalance)}
+                        onClick={() => setDepositAmount(woverBalance)}
                       >
                         {t('common.max')}
                       </Button>
@@ -305,12 +269,12 @@ export default function ChipShop() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">{t('chipShop.youWillReceive')}</span>
                         <span className="font-bold text-poker-gold text-lg">
-                          {chipsFromDeposit.toLocaleString()} {t('common.chips')}
+                          {chipsFromDeposit.toLocaleString(undefined, { maximumFractionDigits: 4 })} {t('common.chips')}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                         <Info className="w-3 h-3" />
-                        1 {selectedToken} = {CHIPS_PER_TOKEN} {t('common.chips')}
+                        1 WOVER = 1 CHIP
                       </p>
                     </div>
                   )}
@@ -329,37 +293,19 @@ export default function ChipShop() {
                     ) : (
                       <>
                         <ArrowDownToLine className="w-4 h-4 mr-2" />
-                        {t('chipShop.depositTokens', { token: selectedToken })}
+                        {t('chipShop.depositTokens', { token: 'WOVER' })}
                       </>
                     )}
                   </Button>
                 </TabsContent>
 
                 <TabsContent value="withdraw" className="space-y-6">
-                  {/* Token Selection */}
-                  <div className="flex gap-2">
-                    <Badge
-                      variant={selectedToken === 'USDT' ? 'default' : 'outline'}
-                      className="cursor-pointer px-4 py-2 text-sm"
-                      onClick={() => setSelectedToken('USDT')}
-                    >
-                      USDT
-                    </Badge>
-                    <Badge
-                      variant={selectedToken === 'USDC' ? 'default' : 'outline'}
-                      className="cursor-pointer px-4 py-2 text-sm"
-                      onClick={() => setSelectedToken('USDC')}
-                    >
-                      USDC
-                    </Badge>
-                  </div>
-
                   {/* Amount Input */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium">{t('chipShop.chipsAmount')}</label>
                       <span className="text-xs text-muted-foreground">
-                        {t('chips.available')}: {chipBalance?.availableChips.toLocaleString() ?? 0}
+                        {t('chips.available')}: {chipBalance?.availableChips.toLocaleString(undefined, { maximumFractionDigits: 4 }) ?? 0}
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -369,7 +315,7 @@ export default function ChipShop() {
                         value={withdrawAmount}
                         onChange={(e) => setWithdrawAmount(e.target.value)}
                         min="0"
-                        step="100"
+                        step="0.0001"
                       />
                       <Button
                         variant="outline"
@@ -386,12 +332,12 @@ export default function ChipShop() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">{t('chipShop.youWillReceive')}</span>
                         <span className="font-bold text-primary text-lg">
-                          {tokensFromWithdraw.toFixed(2)} {selectedToken}
+                          {woverFromWithdraw.toLocaleString(undefined, { maximumFractionDigits: 4 })} WOVER
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                         <Info className="w-3 h-3" />
-                        {CHIPS_PER_TOKEN} {t('common.chips')} = 1 {selectedToken}
+                        1 CHIP = 1 WOVER
                       </p>
                     </div>
                   )}

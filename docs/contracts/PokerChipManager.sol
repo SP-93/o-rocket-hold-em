@@ -9,6 +9,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  * @title PokerChipManager
  * @dev Manages WOVER token deposits/withdrawals for O'Rocket Hold'em poker game
  * 
+ * CONVERSION: 1 WOVER = 1 CHIP (both have 18 decimals)
+ * This allows for micro-stakes tables with 0.01 chip blinds when WOVER price increases
+ * 
  * SECURITY NOTES:
  * - Only owner (admin backend) can lock chips to tables and settle games
  * - ReentrancyGuard prevents reentrancy attacks on all external functions
@@ -18,14 +21,11 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract PokerChipManager is Ownable, ReentrancyGuard {
     IERC20 public immutable woverToken;
     
-    // Conversion rate: 1 WOVER = 100 chips (allows for granular betting)
-    uint256 public constant CHIPS_PER_WOVER = 100;
+    // Minimum deposit/withdrawal amounts (in wei, 18 decimals)
+    uint256 public constant MIN_DEPOSIT = 0.01 ether; // 0.01 WOVER minimum
+    uint256 public constant MIN_WITHDRAWAL = 0.01 ether; // 0.01 WOVER worth of chips
     
-    // Minimum deposit/withdrawal amounts
-    uint256 public constant MIN_DEPOSIT = 1 ether; // 1 WOVER minimum
-    uint256 public constant MIN_WITHDRAWAL_CHIPS = 100; // 1 WOVER worth of chips
-    
-    // Player chip balances (available for play)
+    // Player chip balances (available for play) - stored with 18 decimals
     mapping(address => uint256) public chipBalance;
     
     // Player locked WOVER (total deposited, for tracking)
@@ -98,7 +98,7 @@ contract PokerChipManager is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Player deposits WOVER tokens to receive chips
+     * @dev Player deposits WOVER tokens to receive chips (1:1 ratio)
      * @param woverAmount Amount of WOVER to deposit (in wei, 18 decimals)
      */
     function buyIn(uint256 woverAmount) external nonReentrant {
@@ -109,9 +109,8 @@ contract PokerChipManager is Ownable, ReentrancyGuard {
         bool success = woverToken.transferFrom(msg.sender, address(this), woverAmount);
         if (!success) revert TransferFailed();
         
-        // Calculate chips (1 WOVER = 100 chips)
-        // woverAmount is in wei (18 decimals), so we divide by 1e18 first
-        uint256 chips = (woverAmount / 1 ether) * CHIPS_PER_WOVER;
+        // 1 WOVER = 1 CHIP (direct 1:1, both have 18 decimals)
+        uint256 chips = woverAmount;
         
         // Update balances
         lockedWover[msg.sender] += woverAmount;
@@ -121,17 +120,16 @@ contract PokerChipManager is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Player cashes out chips for WOVER tokens
-     * @param chipAmount Amount of chips to cash out
+     * @dev Player cashes out chips for WOVER tokens (1:1 ratio)
+     * @param chipAmount Amount of chips to cash out (in wei, 18 decimals)
      */
     function cashOut(uint256 chipAmount) external nonReentrant {
         if (chipAmount == 0) revert ZeroAmount();
-        if (chipAmount < MIN_WITHDRAWAL_CHIPS) revert BelowMinimumWithdrawal();
+        if (chipAmount < MIN_WITHDRAWAL) revert BelowMinimumWithdrawal();
         if (chipBalance[msg.sender] < chipAmount) revert InsufficientChips();
         
-        // Calculate WOVER amount (100 chips = 1 WOVER)
-        uint256 woverAmount = (chipAmount / CHIPS_PER_WOVER) * 1 ether;
-        if (woverAmount == 0) revert BelowMinimumWithdrawal();
+        // 1 CHIP = 1 WOVER (direct 1:1)
+        uint256 woverAmount = chipAmount;
         if (lockedWover[msg.sender] < woverAmount) revert InsufficientWover();
         
         // Update balances first (checks-effects-interactions pattern)
@@ -286,6 +284,7 @@ contract PokerChipManager is Ownable, ReentrancyGuard {
     ) {
         available = chipBalance[player];
         woverDeposited = lockedWover[player];
-        woverEquivalent = (available / CHIPS_PER_WOVER) * 1 ether;
+        // 1 CHIP = 1 WOVER
+        woverEquivalent = available;
     }
 }

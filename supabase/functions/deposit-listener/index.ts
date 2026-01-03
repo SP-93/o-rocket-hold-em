@@ -6,20 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Token addresses matching frontend
-const TOKEN_ADDRESSES = {
-  USDT: '0xA510432E4aa60B4acd476fb850EC84B7EE226b2d',
-  USDC: '0x8712796136Ac8e0EEeC123251ef93702f265aa80',
-};
+// WOVER token address (Wrapped OVER) - for chip purchases
+const WOVER_TOKEN_ADDRESS = '0x59c914C8ac6F212bb655737CC80d9Abc79A1e273';
 
 // Admin wallet that receives deposits
 const ADMIN_WALLET = '0x8334966329b7f4b459633696A8CA59118253bC89';
 
-// Chips per token (1 USDT/USDC = 100 chips)
-const CHIPS_PER_TOKEN = 100;
+// 1 WOVER = 1 CHIP (direct 1:1 conversion)
+const CHIPS_PER_WOVER = 1;
 
-// Token decimals
-const TOKEN_DECIMALS = 6;
+// WOVER has 18 decimals (like ETH)
+const WOVER_DECIMALS = 18;
 
 // ERC20 Transfer event signature
 const TRANSFER_EVENT_SIGNATURE = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
@@ -56,14 +53,10 @@ serve(async (req) => {
           return errorResponse('Missing required fields', 400);
         }
 
-        // Validate token address
-        const tokenSymbol = Object.entries(TOKEN_ADDRESSES).find(
-          ([_, addr]) => addr.toLowerCase() === token_address.toLowerCase()
-        )?.[0];
-
-        if (!tokenSymbol) {
-          console.log(`[deposit-listener] Unknown token: ${token_address}`);
-          return errorResponse('Unknown token', 400);
+        // Validate token address - only WOVER is accepted for chip deposits
+        if (token_address.toLowerCase() !== WOVER_TOKEN_ADDRESS.toLowerCase()) {
+          console.log(`[deposit-listener] Rejected non-WOVER token: ${token_address}`);
+          return errorResponse('Only WOVER tokens accepted for chip deposits', 400);
         }
 
         // Check if already processed
@@ -78,9 +71,10 @@ serve(async (req) => {
           return successResponse({ success: true, already_processed: true });
         }
 
-        // Calculate chips (amount is in token units with decimals)
-        const tokenAmount = parseFloat(amount) / Math.pow(10, TOKEN_DECIMALS);
-        const chipsGranted = Math.floor(tokenAmount * CHIPS_PER_TOKEN);
+        // Calculate chips (amount is in wei, 18 decimals)
+        // 1 WOVER = 1 CHIP
+        const woverAmount = parseFloat(amount) / Math.pow(10, WOVER_DECIMALS);
+        const chipsGranted = woverAmount * CHIPS_PER_WOVER;
 
         if (chipsGranted <= 0) {
           return errorResponse('Invalid amount', 400);
@@ -93,7 +87,7 @@ serve(async (req) => {
             wallet_address: from_address.toLowerCase(),
             tx_hash,
             block_number,
-            wover_amount: tokenAmount,
+            wover_amount: woverAmount,
             chips_granted: chipsGranted,
             event_type: 'deposit',
             processed: true,
@@ -118,7 +112,7 @@ serve(async (req) => {
             .update({
               on_chain_chips: currentBalance.on_chain_chips + chipsGranted,
               available_chips: currentBalance.available_chips + chipsGranted,
-              total_deposited_wover: currentBalance.total_deposited_wover + tokenAmount,
+              total_deposited_wover: currentBalance.total_deposited_wover + woverAmount,
               last_sync_block: block_number,
               last_deposit_tx: tx_hash,
             })
@@ -136,7 +130,7 @@ serve(async (req) => {
               wallet_address: from_address.toLowerCase(),
               on_chain_chips: chipsGranted,
               available_chips: chipsGranted,
-              total_deposited_wover: tokenAmount,
+              total_deposited_wover: woverAmount,
               last_sync_block: block_number,
               last_deposit_tx: tx_hash,
             });
@@ -147,12 +141,12 @@ serve(async (req) => {
           }
         }
 
-        console.log(`[deposit-listener] Processed deposit: ${tokenAmount} ${tokenSymbol} = ${chipsGranted} chips for ${from_address}`);
+        console.log(`[deposit-listener] Processed deposit: ${woverAmount} WOVER = ${chipsGranted} chips for ${from_address}`);
         
         return successResponse({
           success: true,
-          token: tokenSymbol,
-          amount: tokenAmount,
+          token: 'WOVER',
+          amount: woverAmount,
           chips_granted: chipsGranted,
           wallet: from_address,
         });
@@ -171,7 +165,7 @@ serve(async (req) => {
         return successResponse({
           last_processed_block: lastBlock,
           admin_wallet: ADMIN_WALLET,
-          supported_tokens: TOKEN_ADDRESSES,
+          wover_token: WOVER_TOKEN_ADDRESS,
         });
       }
 
