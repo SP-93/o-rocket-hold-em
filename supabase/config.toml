@@ -1,1 +1,7 @@
 project_id = "snmxyrdcgxzvdshfuldt"
+
+[functions.poker-game]
+verify_jwt = false
+
+[functions.chip-manager]
+verify_jwt = false

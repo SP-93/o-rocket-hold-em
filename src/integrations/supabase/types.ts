@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      deposit_events: {
+        Row: {
+          block_number: number
+          chips_granted: number
+          created_at: string
+          event_type: string
+          id: string
+          processed: boolean
+          tx_hash: string
+          wallet_address: string
+          wover_amount: number
+        }
+        Insert: {
+          block_number: number
+          chips_granted: number
+          created_at?: string
+          event_type: string
+          id?: string
+          processed?: boolean
+          tx_hash: string
+          wallet_address: string
+          wover_amount: number
+        }
+        Update: {
+          block_number?: number
+          chips_granted?: number
+          created_at?: string
+          event_type?: string
+          id?: string
+          processed?: boolean
+          tx_hash?: string
+          wallet_address?: string
+          wover_amount?: number
+        }
+        Relationships: []
+      }
       game_actions: {
         Row: {
           action: string
@@ -51,6 +87,86 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      game_settlements: {
+        Row: {
+          created_at: string
+          id: string
+          settled_at: string
+          settlement_data: Json
+          table_id: string
+          tx_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          settled_at?: string
+          settlement_data: Json
+          table_id: string
+          tx_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          settled_at?: string
+          settlement_data?: Json
+          table_id?: string
+          tx_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_settlements_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_balances: {
+        Row: {
+          available_chips: number
+          created_at: string
+          id: string
+          last_deposit_tx: string | null
+          last_sync_block: number | null
+          last_withdrawal_tx: string | null
+          locked_in_games: number
+          on_chain_chips: number
+          total_deposited_wover: number
+          total_withdrawn_wover: number
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          available_chips?: number
+          created_at?: string
+          id?: string
+          last_deposit_tx?: string | null
+          last_sync_block?: number | null
+          last_withdrawal_tx?: string | null
+          locked_in_games?: number
+          on_chain_chips?: number
+          total_deposited_wover?: number
+          total_withdrawn_wover?: number
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          available_chips?: number
+          created_at?: string
+          id?: string
+          last_deposit_tx?: string | null
+          last_sync_block?: number | null
+          last_withdrawal_tx?: string | null
+          locked_in_games?: number
+          on_chain_chips?: number
+          total_deposited_wover?: number
+          total_withdrawn_wover?: number
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
       }
       poker_tables: {
         Row: {
@@ -151,6 +267,7 @@ export type Database = {
           is_small_blind: boolean
           is_turn: boolean
           last_action: string | null
+          on_chain_buy_in: number
           player_name: string | null
           player_wallet: string | null
           seat_number: number
@@ -169,6 +286,7 @@ export type Database = {
           is_small_blind?: boolean
           is_turn?: boolean
           last_action?: string | null
+          on_chain_buy_in?: number
           player_name?: string | null
           player_wallet?: string | null
           seat_number: number
@@ -187,6 +305,7 @@ export type Database = {
           is_small_blind?: boolean
           is_turn?: boolean
           last_action?: string | null
+          on_chain_buy_in?: number
           player_name?: string | null
           player_wallet?: string | null
           seat_number?: number
