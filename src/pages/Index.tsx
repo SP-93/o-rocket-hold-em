@@ -278,7 +278,7 @@ export default function Index() {
                 <Rocket className="h-6 w-6 text-primary" />
                 <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-poker-gold" />
               </div>
-              <span className="font-display text-lg font-bold tracking-wide">O'Rocket Hold'em</span>
+              <span className="font-display text-lg font-bold tracking-wide text-foreground">O'Rocket Hold'em</span>
             </div>
             <p className="text-sm text-muted-foreground">
               {t('footer.poweredBy')} • © 2026 {t('footer.rights')}
