@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -6,11 +7,13 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PokerTable, ActionButtons } from '@/components/poker';
 import { TableChat } from '@/components/poker/TableChat';
+import { BuyInModal } from '@/components/poker/BuyInModal';
 import { usePokerTable } from '@/hooks/usePokerTable';
 import { useTableChat } from '@/hooks/useTableChat';
 import { useWalletContext } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
 import { Card } from '@/types/poker';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Table() {
   const { id } = useParams();
@@ -18,6 +21,11 @@ export default function Table() {
   const { table, seats, loading, error, joinTable, leaveTable, performAction } = usePokerTable(id || '');
   const { messages, sendMessage } = useTableChat(id || '');
   const { address, isConnected } = useWalletContext();
+
+  // Buy-in modal state
+  const [buyInModalOpen, setBuyInModalOpen] = useState(false);
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
 
   // Find current player's seat
   const playerSeat = seats.find(s => s.player_wallet?.toLowerCase() === address?.toLowerCase());
@@ -40,7 +48,7 @@ export default function Table() {
     };
   });
 
-  const handleJoinSeat = async (seatNumber: number) => {
+  const handleSeatClick = (seatNumber: number) => {
     if (!isConnected || !address) {
       toast({
         title: t('errors.connectWallet'),
@@ -50,12 +58,59 @@ export default function Table() {
       return;
     }
 
-    const success = await joinTable(seatNumber, address, undefined, 1000);
-    if (success) {
-      toast({
-        title: t('common.success'),
-        description: t('table.joinedSeat', { seat: seatNumber }),
+    setSelectedSeat(seatNumber);
+    setBuyInModalOpen(true);
+  };
+
+  const handleBuyInConfirm = async (chipAmount: number) => {
+    if (!selectedSeat || !address || !id) return;
+
+    setIsJoining(true);
+    try {
+      // Call chip-manager to lock chips
+      const { data, error: lockError } = await supabase.functions.invoke('chip-manager', {
+        body: {
+          action: 'join_table',
+          wallet_address: address,
+          table_id: id,
+          chip_amount: chipAmount,
+        },
       });
+
+      if (lockError || data?.error) {
+        throw new Error(data?.error || lockError?.message || 'Failed to lock chips');
+      }
+
+      // Join the table with the chosen chip amount
+      const success = await joinTable(selectedSeat, address, undefined, chipAmount);
+      
+      if (success) {
+        toast({
+          title: t('common.success'),
+          description: t('table.joinedSeat', { seat: selectedSeat }),
+        });
+        setBuyInModalOpen(false);
+      } else {
+        // Unlock chips if join failed
+        await supabase.functions.invoke('chip-manager', {
+          body: {
+            action: 'leave_table',
+            wallet_address: address,
+            table_id: id,
+            chip_amount: chipAmount,
+          },
+        });
+        throw new Error('Failed to join table');
+      }
+    } catch (err) {
+      console.error('Buy-in error:', err);
+      toast({
+        title: t('common.error'),
+        description: err instanceof Error ? err.message : 'Failed to buy in',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -154,7 +209,7 @@ export default function Table() {
           phase={table.current_phase}
           maxPlayers={table.max_players as 5 | 6}
           className="mb-8"
-          onSeatClick={!playerSeat ? handleJoinSeat : undefined}
+          onSeatClick={!playerSeat ? handleSeatClick : undefined}
         />
 
         {/* Action buttons - only show if player is seated */}
@@ -197,6 +252,17 @@ export default function Table() {
             currentWallet={address}
           />
         )}
+
+        {/* Buy-In Modal */}
+        <BuyInModal
+          isOpen={buyInModalOpen}
+          onClose={() => setBuyInModalOpen(false)}
+          onConfirm={handleBuyInConfirm}
+          minBuyIn={table.big_blind * 20}
+          maxBuyIn={table.big_blind * 200}
+          bigBlind={table.big_blind}
+          isLoading={isJoining}
+        />
       </main>
     </div>
   );

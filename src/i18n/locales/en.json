@@ -148,6 +148,16 @@
     "inGame": "In Game",
     "available": "Available"
   },
+  "buyIn": {
+    "title": "Buy-In",
+    "description": "Choose how many chips to bring to the table",
+    "amount": "Buy-In Amount",
+    "availableBalance": "Available Balance",
+    "sitDown": "Sit Down",
+    "insufficientChips": "Insufficient chips",
+    "needMinimum": "You need at least {{min}} chips. You have {{available}}.",
+    "goToChipShop": "Go to Chip Shop"
+  },
   "chipShop": {
     "title": "Chip Shop",
     "subtitle": "Buy and sell chips with USDT or USDC",

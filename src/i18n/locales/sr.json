@@ -149,6 +149,16 @@
     "inGame": "U igri",
     "available": "Dostupno"
   },
+  "buyIn": {
+    "title": "Buy-In",
+    "description": "Izaberi koliko čipova želiš da doneseš za sto",
+    "amount": "Buy-In Iznos",
+    "availableBalance": "Dostupno Stanje",
+    "sitDown": "Sedni",
+    "insufficientChips": "Nedovoljno čipova",
+    "needMinimum": "Trebaš minimum {{min}} čipova. Imaš {{available}}.",
+    "goToChipShop": "Idi u Prodavnicu Čipova"
+  },
   "chipShop": {
     "title": "Prodavnica Čipova",
     "subtitle": "Kupujte i prodajte čipove sa USDT ili USDC",

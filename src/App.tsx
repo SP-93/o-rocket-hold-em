@@ -9,6 +9,7 @@ import Lobby from "./pages/Lobby";
 import Table from "./pages/Table";
 import Admin from "./pages/Admin";
 import ChipShop from "./pages/ChipShop";
+import Tournament from "./pages/Tournament";
 import NotFound from "./pages/NotFound";
 
 // Import i18n configuration
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/table/:id" element={<Table />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/chipshop" element={<ChipShop />} />
+              <Route path="/tournament/:id" element={<Tournament />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
