@@ -14,8 +14,10 @@ Glavni contract za upravljanje čipovima.
 
 | Network | Address | Status |
 |---------|---------|--------|
-| Over Mainnet | `[TBD - deploy iz admin panela]` | ⏳ Pending |
+| Over Mainnet | `[TBD - deploy sa admin wallet-a]` | ⏳ Pending |
 | Over Testnet | `[TBD]` | ⏳ Pending |
+
+**Admin Wallet (Deployer/Owner):** `0x8334966329b7f4b459633696A8CA59118253bC89`
 
 **Fajlovi:**
 - `PokerChipManager.sol` - Glavni contract
@@ -102,11 +104,25 @@ npx hardhat verify --network over-testnet <CONTRACT_ADDRESS> <WOVER_TOKEN_ADDRES
 
 | Info | Vrednost |
 |------|----------|
-| Adresa | `[TBD - hardcoded u backend]` |
-| Uloga | Owner svih contract-a |
-| Pristup | Backend edge functions |
+| Adresa | `0x8334966329b7f4b459633696A8CA59118253bC89` |
+| Uloga | Contract Owner + Settlement Signer |
+| Mreža | Over Protocol Mainnet (Chain ID: 54176) |
+| Pristup | Backend edge functions (service role) |
+
+**Odgovornosti:**
+- Deploy i ownership svih contract-a
+- Potpisivanje `lockChipsToTable` i `settleGame` transakcija
+- Emergency unlock u slučaju stuck igara
 
 **VAŽNO:** Privatni ključ NIKADA nije u frontend kodu. Samo u Supabase secrets.
+
+### Secrets za konfiguraciju (Supabase Dashboard > Edge Functions > Secrets):
+
+| Secret | Opis | Status |
+|--------|------|--------|
+| `ADMIN_WALLET_PRIVATE_KEY` | Privatni ključ admin wallet-a | ⏳ Pending |
+| `POKER_CONTRACT_ADDRESS` | Adresa deploy-ovanog contract-a | ⏳ Pending |
+| `WOVER_TOKEN_ADDRESS` | Adresa WOVER ERC-20 tokena | ⏳ Pending |
 
 ---
 
