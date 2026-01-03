@@ -116,7 +116,7 @@ export default function Lobby() {
                       bigBlind: table.big_blind,
                       avgPot: table.avg_pot,
                       status: table.status,
-                      createdAt: new Date(table.created_at),
+                      isPrivate: table.is_private,
                     }} 
                   />
                 ))}

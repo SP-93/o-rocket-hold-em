@@ -90,11 +90,24 @@
     "enterTableName": "Molimo unesite ime stola",
     "tableCreated": "Sto je napravljen!",
     "tableReady": "{{name}} je spreman za igru",
+    "privateTableReady": "Privatni sto {{name}} je spreman",
     "createFailed": "Neuspelo kreiranje stola",
+    "privateTable": "Privatni Sto",
+    "privateTableDesc": "Samo pozvani igrači mogu da se pridruže",
+    "tablePassword": "Lozinka Stola",
+    "passwordPlaceholder": "Unesite lozinku (opciono)",
+    "invitePlayers": "Pozovi Igrače",
+    "invitePlaceholder": "0x123..., 0x456...",
+    "inviteHint": "Wallet adrese odvojene zarezom",
+    "creationFee": "Naknada za Privatni Sto",
+    "payAndCreate": "Plati {{amount}} {{token}} i Napravi",
+    "processingPayment": "Obrađivanje Plaćanja...",
     "filters": {
       "all": "Svi",
       "fivePlayer": "5 igrača",
-      "sixPlayer": "6 igrača"
+      "sixPlayer": "6 igrača",
+      "public": "Javni",
+      "private": "Privatni"
     }
   },
   "table": {
