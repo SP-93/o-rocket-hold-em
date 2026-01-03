@@ -30,11 +30,11 @@ export function LanguageSwitcher() {
         <Button 
           variant="outline" 
           size="sm" 
-          className="gap-2 h-9 px-3 border-border/60 bg-background/50 backdrop-blur-sm hover:bg-background/80 hover:border-primary/50 transition-all"
+          className="gap-2 h-9 px-3 bg-secondary border-primary/40 hover:bg-primary/20 hover:border-primary transition-all"
         >
           <Globe className="h-4 w-4 text-primary" />
           <span className="text-lg leading-none">{currentLang.flag}</span>
-          <span className="hidden sm:inline text-xs font-medium uppercase tracking-wide">
+          <span className="hidden sm:inline text-xs font-semibold uppercase tracking-wide text-foreground">
             {currentLang.code}
           </span>
         </Button>
