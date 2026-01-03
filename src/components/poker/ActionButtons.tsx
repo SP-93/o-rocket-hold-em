@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
 
 interface ActionButtonsProps {
   isPlayerTurn: boolean;
@@ -41,11 +42,37 @@ export function ActionButtons({
   onAllIn,
 }: ActionButtonsProps) {
   const { t } = useTranslation();
+  const { playSound } = usePokerSounds();
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
   const [showRaiseSlider, setShowRaiseSlider] = useState(false);
 
   const callAmount = currentBet;
   const canRaise = playerChips > currentBet;
+
+  const handleFold = () => {
+    playSound('fold');
+    onFold();
+  };
+
+  const handleCheck = () => {
+    playSound('check');
+    onCheck();
+  };
+
+  const handleCall = () => {
+    playSound('call');
+    onCall();
+  };
+
+  const handleRaise = (amount: number) => {
+    playSound('raise');
+    onRaise(amount);
+  };
+
+  const handleAllIn = () => {
+    playSound('allIn');
+    onAllIn();
+  };
 
   if (!isPlayerTurn) {
     return (
@@ -85,7 +112,7 @@ export function ActionButtons({
           <Button
             variant="destructive"
             size="lg"
-            onClick={onFold}
+            onClick={handleFold}
             className="min-w-20 font-display uppercase tracking-wider"
           >
             {t('table.fold')}
@@ -104,7 +131,7 @@ export function ActionButtons({
             <Button
               variant="secondary"
               size="lg"
-              onClick={onCheck}
+              onClick={handleCheck}
               className="min-w-20 font-display uppercase tracking-wider bg-chip-blue hover:bg-chip-blue/90"
             >
               {t('table.check')}
@@ -113,7 +140,7 @@ export function ActionButtons({
             <Button
               variant="default"
               size="lg"
-              onClick={onCall}
+              onClick={handleCall}
               className="min-w-24 font-display uppercase tracking-wider"
             >
               {t('table.call')} {callAmount}
@@ -155,7 +182,7 @@ export function ActionButtons({
           <Button
             variant="outline"
             size="lg"
-            onClick={onAllIn}
+            onClick={handleAllIn}
             className="min-w-20 font-display uppercase tracking-wider border-poker-red text-poker-red hover:bg-poker-red hover:text-primary-foreground"
           >
             {t('table.allIn')}
@@ -192,7 +219,7 @@ export function ActionButtons({
               <Button
                 variant="default"
                 onClick={() => {
-                  onRaise(raiseAmount);
+                  handleRaise(raiseAmount);
                   setShowRaiseSlider(false);
                 }}
                 className="w-full font-display bg-poker-gold text-accent-foreground hover:bg-poker-gold/90"

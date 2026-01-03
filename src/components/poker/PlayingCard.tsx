@@ -1,6 +1,8 @@
 import { Card } from '@/types/poker';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
 
 interface PlayingCardProps {
   card?: Card;
@@ -39,6 +41,18 @@ export function PlayingCard({
   dealing = false,
   delay = 0,
 }: PlayingCardProps) {
+  const { playSound } = usePokerSounds();
+
+  // Play card deal sound when dealing animation starts
+  useEffect(() => {
+    if (dealing) {
+      const timer = setTimeout(() => {
+        playSound('cardDeal');
+      }, delay * 100);
+      return () => clearTimeout(timer);
+    }
+  }, [dealing, delay, playSound]);
+
   if (!card && !faceDown) return null;
 
   return (
