@@ -47,6 +47,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "ethers": "^5.7.2",
+    "framer-motion": "^11.18.2",
     "i18next": "^25.7.3",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
