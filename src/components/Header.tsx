@@ -32,6 +32,13 @@ export function Header() {
             {t('nav.lobby')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
+          <Link 
+            to="/chipshop" 
+            className="text-sm font-medium text-foreground hover:text-poker-gold transition-colors relative group"
+          >
+            {t('chipShop.title')}
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-poker-gold transition-all group-hover:w-full" />
+          </Link>
         </nav>
 
         {/* Actions */}
