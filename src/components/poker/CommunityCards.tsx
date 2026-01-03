@@ -2,6 +2,8 @@ import { Card } from '@/types/poker';
 import { PlayingCard } from './PlayingCard';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef } from 'react';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
 
 interface CommunityCardsProps {
   cards: Card[];
@@ -9,8 +11,17 @@ interface CommunityCardsProps {
 }
 
 export function CommunityCards({ cards, phase }: CommunityCardsProps) {
-  // Show 5 card slots, fill with actual cards
+  const { playSound } = usePokerSounds();
+  const prevPhaseRef = useRef(phase);
   const slots = [0, 1, 2, 3, 4];
+
+  // Play sound on phase change
+  useEffect(() => {
+    if (prevPhaseRef.current !== phase && phase !== 'waiting' && phase !== 'preflop') {
+      playSound('turn');
+    }
+    prevPhaseRef.current = phase;
+  }, [phase, playSound]);
 
   return (
     <div className="flex gap-2 justify-center">
