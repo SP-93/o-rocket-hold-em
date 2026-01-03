@@ -10,6 +10,18 @@
     "role": "Contract Owner + Backend Signer",
     "description": "Koristi se za deploy, ownership, lockChipsToTable, settleGame, emergencyUnlock"
   },
+  "tokens": {
+    "USDT": {
+      "address": "0xA510432E4aa60B4acd476fb850EC84B7EE226b2d",
+      "decimals": 6,
+      "network": "Over Protocol"
+    },
+    "USDC": {
+      "address": "0x8712796136Ac8e0EEeC123251ef93702f265aa80",
+      "decimals": 6,
+      "network": "Over Protocol"
+    }
+  },
   "contracts": {
     "pokerChipManager": {
       "status": "pending",
@@ -23,6 +35,16 @@
       "note": "ERC-20 token adresa na Over Protocol"
     }
   },
+  "fees": {
+    "privateTableFee": {
+      "amount": 10,
+      "acceptedTokens": ["USDT", "USDC"],
+      "recipient": "0x8334966329b7f4b459633696A8CA59118253bC89",
+      "note": "Admin moze menjati u admin panelu"
+    },
+    "tournamentRakePercent": 5,
+    "cashGameRakePercent": 2.5
+  },
   "constants": {
     "CHIPS_PER_WOVER": 100,
     "MIN_DEPOSIT_WEI": "1000000000000000000",
@@ -33,7 +55,7 @@
     "required": [
       {
         "name": "ADMIN_WALLET_PRIVATE_KEY",
-        "description": "Privatni ključ admin wallet-a za potpisivanje transakcija",
+        "description": "Privatni kljuc admin wallet-a za potpisivanje transakcija",
         "status": "pending"
       },
       {

@@ -123,6 +123,27 @@ export type Database = {
           },
         ]
       }
+      platform_config: {
+        Row: {
+          id: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          id: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       player_balances: {
         Row: {
           available_chips: number
@@ -168,53 +189,98 @@ export type Database = {
         }
         Relationships: []
       }
+      player_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          username: string
+          wallet_address: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          username: string
+          wallet_address: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       poker_tables: {
         Row: {
           active_player_seat: number | null
+          allowed_players: string[] | null
           big_blind: number
           community_cards: Json
           created_at: string
+          creation_fee_token: string | null
+          creation_fee_tx: string | null
+          creator_wallet: string | null
           current_bet: number
           current_phase: string
           dealer_position: number
           id: string
+          is_private: boolean | null
           max_players: number
           name: string
           pot: number
           small_blind: number
           status: string
+          table_password: string | null
           updated_at: string
         }
         Insert: {
           active_player_seat?: number | null
+          allowed_players?: string[] | null
           big_blind?: number
           community_cards?: Json
           created_at?: string
+          creation_fee_token?: string | null
+          creation_fee_tx?: string | null
+          creator_wallet?: string | null
           current_bet?: number
           current_phase?: string
           dealer_position?: number
           id?: string
+          is_private?: boolean | null
           max_players?: number
           name: string
           pot?: number
           small_blind?: number
           status?: string
+          table_password?: string | null
           updated_at?: string
         }
         Update: {
           active_player_seat?: number | null
+          allowed_players?: string[] | null
           big_blind?: number
           community_cards?: Json
           created_at?: string
+          creation_fee_token?: string | null
+          creation_fee_tx?: string | null
+          creator_wallet?: string | null
           current_bet?: number
           current_phase?: string
           dealer_position?: number
           id?: string
+          is_private?: boolean | null
           max_players?: number
           name?: string
           pot?: number
           small_blind?: number
           status?: string
+          table_password?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -322,15 +388,173 @@ export type Database = {
           },
         ]
       }
+      tournament_registrations: {
+        Row: {
+          eliminated_at: string | null
+          id: string
+          is_eliminated: boolean | null
+          payout_amount: number | null
+          placement: number | null
+          registered_at: string | null
+          tournament_id: string | null
+          username: string
+          wallet_address: string
+        }
+        Insert: {
+          eliminated_at?: string | null
+          id?: string
+          is_eliminated?: boolean | null
+          payout_amount?: number | null
+          placement?: number | null
+          registered_at?: string | null
+          tournament_id?: string | null
+          username: string
+          wallet_address: string
+        }
+        Update: {
+          eliminated_at?: string | null
+          id?: string
+          is_eliminated?: boolean | null
+          payout_amount?: number | null
+          placement?: number | null
+          registered_at?: string | null
+          tournament_id?: string | null
+          username?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_registrations_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          blind_structure: Json
+          created_at: string | null
+          created_by: string
+          entry_chips: number
+          entry_wover_value: number
+          finished_at: string | null
+          id: string
+          max_players: number
+          name: string
+          payout_percentages: Json
+          payout_structure: Database["public"]["Enums"]["payout_structure"]
+          platform_rake_percent: number | null
+          prize_pool: number | null
+          started_at: string | null
+          starting_stack: number
+          status: Database["public"]["Enums"]["tournament_status"] | null
+          tournament_type: Database["public"]["Enums"]["tournament_type"]
+        }
+        Insert: {
+          blind_structure: Json
+          created_at?: string | null
+          created_by: string
+          entry_chips: number
+          entry_wover_value: number
+          finished_at?: string | null
+          id?: string
+          max_players: number
+          name: string
+          payout_percentages: Json
+          payout_structure: Database["public"]["Enums"]["payout_structure"]
+          platform_rake_percent?: number | null
+          prize_pool?: number | null
+          started_at?: string | null
+          starting_stack: number
+          status?: Database["public"]["Enums"]["tournament_status"] | null
+          tournament_type: Database["public"]["Enums"]["tournament_type"]
+        }
+        Update: {
+          blind_structure?: Json
+          created_at?: string | null
+          created_by?: string
+          entry_chips?: number
+          entry_wover_value?: number
+          finished_at?: string | null
+          id?: string
+          max_players?: number
+          name?: string
+          payout_percentages?: Json
+          payout_structure?: Database["public"]["Enums"]["payout_structure"]
+          platform_rake_percent?: number | null
+          prize_pool?: number | null
+          started_at?: string | null
+          starting_stack?: number
+          status?: Database["public"]["Enums"]["tournament_status"] | null
+          tournament_type?: Database["public"]["Enums"]["tournament_type"]
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      world_chat: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          username: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          username: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          username?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _wallet: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      payout_structure: "winner_takes_all" | "top_3" | "top_2"
+      tournament_status: "registering" | "running" | "finished" | "cancelled"
+      tournament_type: "sit_and_go" | "heads_up" | "winner_takes_all"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -457,6 +681,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      payout_structure: ["winner_takes_all", "top_3", "top_2"],
+      tournament_status: ["registering", "running", "finished", "cancelled"],
+      tournament_type: ["sit_and_go", "heads_up", "winner_takes_all"],
+    },
   },
 } as const
