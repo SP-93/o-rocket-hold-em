@@ -1,116 +1,190 @@
 import { useParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
 import { PokerTable, ActionButtons } from '@/components/poker';
+import { usePokerTable } from '@/hooks/usePokerTable';
+import { useWallet } from '@/hooks/useWallet';
+import { toast } from '@/hooks/use-toast';
 import { Card } from '@/types/poker';
-
-// Mock data for demo
-const mockPlayers = [
-  {
-    walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
-    displayName: 'You',
-    chipStack: 5000,
-    cards: [
-      { suit: 'hearts' as const, rank: 'A' as const },
-      { suit: 'spades' as const, rank: 'K' as const },
-    ],
-    isTurn: true,
-  },
-  {
-    walletAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
-    displayName: 'Player2',
-    chipStack: 3200,
-    isSmallBlind: true,
-    lastAction: 'call' as const,
-  },
-  null, // Empty seat
-  {
-    walletAddress: '0x9876543210fedcba9876543210fedcba98765432',
-    displayName: 'Dealer_Pro',
-    chipStack: 8500,
-    isDealer: true,
-    cards: [
-      { suit: 'clubs' as const, rank: '10' as const },
-      { suit: 'diamonds' as const, rank: 'Q' as const },
-    ],
-    lastAction: 'raise' as const,
-  },
-  {
-    walletAddress: '0xfedcba9876543210fedcba9876543210fedcba98',
-    chipStack: 1200,
-    isBigBlind: true,
-    isFolded: true,
-    lastAction: 'fold' as const,
-  },
-  null, // Empty seat
-];
-
-const mockCommunityCards: Card[] = [
-  { suit: 'hearts', rank: '7' },
-  { suit: 'diamonds', rank: 'J' },
-  { suit: 'clubs', rank: '3' },
-];
 
 export default function Table() {
   const { id } = useParams();
   const { t } = useTranslation();
-  const [phase] = useState<'flop'>('flop');
-  const [pot] = useState(1250);
+  const { table, seats, loading, error, joinTable, leaveTable, performAction } = usePokerTable(id || '');
+  const { address, isConnected } = useWallet();
 
-  const handleFold = () => console.log('Fold');
-  const handleCheck = () => console.log('Check');
-  const handleCall = () => console.log('Call');
-  const handleRaise = (amount: number) => console.log('Raise:', amount);
-  const handleAllIn = () => console.log('All-in');
+  // Find current player's seat
+  const playerSeat = seats.find(s => s.player_wallet?.toLowerCase() === address?.toLowerCase());
+  const isPlayerTurn = playerSeat?.is_turn || false;
+
+  // Convert seats to player format for PokerTable component
+  const players = seats.map(seat => {
+    if (!seat.player_wallet) return null;
+    return {
+      walletAddress: seat.player_wallet,
+      displayName: seat.player_name || undefined,
+      chipStack: seat.chip_stack,
+      cards: seat.cards as Card[],
+      isDealer: seat.is_dealer,
+      isSmallBlind: seat.is_small_blind,
+      isBigBlind: seat.is_big_blind,
+      isTurn: seat.is_turn,
+      isFolded: seat.is_folded,
+      lastAction: seat.last_action || undefined,
+    };
+  });
+
+  const handleJoinSeat = async (seatNumber: number) => {
+    if (!isConnected || !address) {
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to join a table',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const success = await joinTable(seatNumber, address, undefined, 1000);
+    if (success) {
+      toast({
+        title: 'Joined!',
+        description: `You joined seat #${seatNumber}`,
+      });
+    }
+  };
+
+  const handleLeave = async () => {
+    if (!playerSeat) return;
+    const success = await leaveTable(playerSeat.seat_number);
+    if (success) {
+      toast({
+        title: 'Left table',
+        description: 'You have left the table',
+      });
+    }
+  };
+
+  const handleFold = () => {
+    if (!playerSeat) return;
+    performAction(playerSeat.seat_number, 'fold');
+  };
+
+  const handleCheck = () => {
+    if (!playerSeat) return;
+    performAction(playerSeat.seat_number, 'check');
+  };
+
+  const handleCall = () => {
+    if (!playerSeat) return;
+    performAction(playerSeat.seat_number, 'call', table?.current_bet);
+  };
+
+  const handleRaise = (amount: number) => {
+    if (!playerSeat) return;
+    performAction(playerSeat.seat_number, 'raise', amount);
+  };
+
+  const handleAllIn = () => {
+    if (!playerSeat) return;
+    performAction(playerSeat.seat_number, 'all-in');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !table) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-8 text-center">
+          <p className="text-destructive mb-4">{error || 'Table not found'}</p>
+          <Button asChild>
+            <Link to="/lobby">Back to Lobby</Link>
+          </Button>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       <main className="container py-8">
-        <div className="mb-8">
-          <Button asChild variant="ghost" size="sm" className="gap-2 mb-4">
-            <Link to="/lobby">
-              <ArrowLeft className="h-4 w-4" />
-              {t('common.back')}
-            </Link>
-          </Button>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <Button asChild variant="ghost" size="sm" className="gap-2 mb-4">
+              <Link to="/lobby">
+                <ArrowLeft className="h-4 w-4" />
+                {t('common.back')}
+              </Link>
+            </Button>
 
-          <h1 className="font-display text-2xl font-bold">
-            {t('table.pot')}: Table #{id}
-          </h1>
+            <h1 className="font-display text-2xl font-bold">
+              {table.name}
+            </h1>
+            <p className="text-muted-foreground">
+              Blinds: {table.small_blind}/{table.big_blind} • {seats.filter(s => s.player_wallet).length}/{table.max_players} players
+            </p>
+          </div>
+
+          {playerSeat && (
+            <Button variant="outline" onClick={handleLeave}>
+              {t('table.leave')}
+            </Button>
+          )}
         </div>
 
         {/* Poker table */}
         <PokerTable
-          players={mockPlayers}
-          communityCards={mockCommunityCards}
-          pot={pot}
-          phase={phase}
-          maxPlayers={6}
+          players={players}
+          communityCards={table.community_cards}
+          pot={table.pot}
+          phase={table.current_phase}
+          maxPlayers={table.max_players as 5 | 6}
           className="mb-8"
+          onSeatClick={!playerSeat ? handleJoinSeat : undefined}
         />
 
-        {/* Action buttons */}
-        <div className="max-w-xl mx-auto">
-          <ActionButtons
-            isPlayerTurn={true}
-            currentBet={100}
-            playerChips={5000}
-            minRaise={200}
-            maxRaise={5000}
-            canCheck={false}
-            onFold={handleFold}
-            onCheck={handleCheck}
-            onCall={handleCall}
-            onRaise={handleRaise}
-            onAllIn={handleAllIn}
-          />
-        </div>
+        {/* Action buttons - only show if player is seated */}
+        {playerSeat && (
+          <div className="max-w-xl mx-auto">
+            <ActionButtons
+              isPlayerTurn={isPlayerTurn}
+              currentBet={table.current_bet}
+              playerChips={playerSeat.chip_stack}
+              minRaise={table.big_blind * 2}
+              maxRaise={playerSeat.chip_stack}
+              canCheck={table.current_bet === 0}
+              onFold={handleFold}
+              onCheck={handleCheck}
+              onCall={handleCall}
+              onRaise={handleRaise}
+              onAllIn={handleAllIn}
+            />
+          </div>
+        )}
+
+        {/* Join prompt */}
+        {!playerSeat && isConnected && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">Click an empty seat to join the table</p>
+          </div>
+        )}
+
+        {!isConnected && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">Connect your wallet to join the game</p>
+          </div>
+        )}
       </main>
     </div>
   );

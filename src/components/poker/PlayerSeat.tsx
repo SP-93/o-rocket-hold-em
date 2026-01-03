@@ -19,6 +19,7 @@ interface PlayerSeatProps {
   };
   position: { top?: string; bottom?: string; left?: string; right?: string };
   className?: string;
+  onClick?: () => void;
 }
 
 function formatAddress(address: string): string {
@@ -39,16 +40,18 @@ const actionColors = {
   'all-in': 'bg-poker-red text-primary-foreground',
 };
 
-export function PlayerSeat({ seatNumber, player, position, className }: PlayerSeatProps) {
+export function PlayerSeat({ seatNumber, player, position, className, onClick }: PlayerSeatProps) {
   const isEmpty = !player;
 
   return (
     <div
       className={cn(
         'absolute flex flex-col items-center gap-1 transition-all duration-300',
+        isEmpty && onClick && 'cursor-pointer hover:scale-105',
         className
       )}
       style={position}
+      onClick={isEmpty && onClick ? onClick : undefined}
     >
       {/* Player cards */}
       {player?.cards && player.cards.length > 0 && !player.isFolded && (
