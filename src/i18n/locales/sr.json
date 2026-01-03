@@ -102,6 +102,11 @@
     "creationFee": "Naknada za Privatni Sto",
     "payAndCreate": "Plati {{amount}} {{token}} i Napravi",
     "processingPayment": "Obrađivanje Plaćanja...",
+    "enterPassword": "Unesite lozinku za {{table}}",
+    "invalidPassword": "Pogrešna lozinka",
+    "passwordRequired": "Lozinka je obavezna",
+    "accessGranted": "Pristup odobren!",
+    "join": "Pridruži se",
     "filters": {
       "all": "Svi",
       "fivePlayer": "5 igrača",
@@ -163,6 +168,7 @@
     "withdrawChips": "Isplati Čipove",
     "depositPending": "Transakcija uplate je poslata!",
     "withdrawProcessing": "Zahtev za isplatu je poslat",
+    "withdrawQueued": "Zahtev za isplatu je dodat u red",
     "balancesRefreshed": "Stanja su osvežena",
     "enterAmount": "Molimo unesite iznos",
     "infoLine1": "Uplate se obrađuju automatski nakon potvrde na blockchain-u.",
@@ -193,7 +199,10 @@
     "transactionFailed": "Transakcija nije uspela",
     "networkError": "Greška mreže",
     "connectWallet": "Poveži novčanik",
-    "connectWalletDescription": "Molimo povežite novčanik da biste se pridružili stolu"
+    "connectWalletDescription": "Molimo povežite novčanik da biste se pridružili stolu",
+    "verificationFailed": "Verifikacija nije uspela",
+    "tableNotFound": "Sto nije pronađen",
+    "withdrawalFailed": "Zahtev za isplatu nije uspeo"
   },
   "footer": {
     "poweredBy": "Pokreće OverProtocol",

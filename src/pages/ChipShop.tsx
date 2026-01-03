@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { useWalletContext } from '@/contexts/WalletContext';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useChipBalance } from '@/hooks/useChipBalance';
 import { useTokenBalance, TOKEN_ADDRESSES, ADMIN_WALLET, CHIPS_PER_TOKEN, TOKEN_DECIMALS } from '@/hooks/useTokenBalance';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { Coins, ArrowDownToLine, ArrowUpFromLine, Wallet, RefreshCw, Info, Circl
 import { toast } from 'sonner';
 import { parseUnits } from 'viem';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { overProtocol } from '@/config/wagmi';
 
 // ERC20 Transfer ABI
@@ -104,8 +105,24 @@ export default function ChipShop() {
       return;
     }
 
-    // TODO: Implement withdrawal through edge function
-    toast.info(t('chipShop.withdrawProcessing'));
+    try {
+      const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+        body: {
+          wallet_address: address,
+          chip_amount: parseFloat(withdrawAmount),
+          token_type: selectedToken,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(t('chipShop.withdrawQueued'));
+      setWithdrawAmount('');
+      refetchChips();
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      toast.error(t('errors.withdrawalFailed'));
+    }
   };
 
   const refreshBalances = () => {

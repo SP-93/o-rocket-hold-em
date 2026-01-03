@@ -24,6 +24,8 @@ import {
   Trash2,
   AlertTriangle
 } from 'lucide-react';
+import { TournamentManager } from '@/components/admin/TournamentManager';
+import { UserManager } from '@/components/admin/UserManager';
 
 interface TableData {
   id: string;
@@ -424,43 +426,14 @@ export default function Admin() {
 
           {/* Tournaments Tab */}
           <TabsContent value="tournaments">
-            <Card className="border-border/50 bg-card/50">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-poker-gold" />
-                  Tournaments
-                </CardTitle>
-                <CardDescription>Create and manage poker tournaments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Trophy className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p className="font-medium">Coming Soon</p>
-                  <p className="text-sm">Tournament system is in development</p>
-                </div>
-              </CardContent>
-            </Card>
+            <TournamentManager adminWallet={address || ''} />
           </TabsContent>
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <Card className="border-border/50 bg-card/50">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  User Management
-                </CardTitle>
-                <CardDescription>View and manage player accounts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p className="font-medium">Coming Soon</p>
-                  <p className="text-sm">User management is in development</p>
-                </div>
-              </CardContent>
-            </Card>
+            <UserManager />
           </TabsContent>
+
         </Tabs>
       </main>
     </div>

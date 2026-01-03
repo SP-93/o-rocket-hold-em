@@ -101,6 +101,11 @@
     "creationFee": "Private Table Fee",
     "payAndCreate": "Pay {{amount}} {{token}} & Create",
     "processingPayment": "Processing Payment...",
+    "enterPassword": "Enter password to join {{table}}",
+    "invalidPassword": "Invalid password",
+    "passwordRequired": "Password is required",
+    "accessGranted": "Access granted!",
+    "join": "Join",
     "filters": {
       "all": "All",
       "fivePlayer": "5 Players",
@@ -162,6 +167,7 @@
     "withdrawChips": "Withdraw Chips",
     "depositPending": "Deposit transaction sent!",
     "withdrawProcessing": "Withdrawal request submitted",
+    "withdrawQueued": "Withdrawal queued for processing",
     "balancesRefreshed": "Balances refreshed",
     "enterAmount": "Please enter an amount",
     "infoLine1": "Deposits are processed automatically after blockchain confirmation.",
@@ -192,7 +198,10 @@
     "transactionFailed": "Transaction failed",
     "networkError": "Network error",
     "connectWallet": "Connect Wallet",
-    "connectWalletDescription": "Please connect your wallet to join a table"
+    "connectWalletDescription": "Please connect your wallet to join a table",
+    "verificationFailed": "Verification failed",
+    "tableNotFound": "Table not found",
+    "withdrawalFailed": "Withdrawal request failed"
   },
   "footer": {
     "poweredBy": "Powered by OverProtocol",
