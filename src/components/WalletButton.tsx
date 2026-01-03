@@ -8,7 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { WalletConnectModal } from '@/components/WalletConnectModal';
 import { Wallet, LogOut, AlertTriangle, ExternalLink } from 'lucide-react';
 
 export function WalletButton() {
@@ -19,13 +18,8 @@ export function WalletButton() {
     isConnecting,
     isCorrectNetwork,
     woverBalance,
-    selectedProvider,
-    providers,
-    isDetectingProviders,
-    isModalOpen,
+    connectorInfo,
     openConnectModal,
-    closeConnectModal,
-    connect,
     disconnect,
     switchNetwork,
   } = useWalletContext();
@@ -33,24 +27,14 @@ export function WalletButton() {
   // Not connected - show connect button
   if (!isConnected) {
     return (
-      <>
-        <Button
-          onClick={openConnectModal}
-          className="gap-2 bg-primary hover:bg-primary/90 glow-primary"
-        >
-          <Wallet className="h-4 w-4" />
-          {t('wallet.connect')}
-        </Button>
-
-        <WalletConnectModal
-          open={isModalOpen}
-          onOpenChange={closeConnectModal}
-          providers={providers}
-          isDetecting={isDetectingProviders}
-          onConnect={connect}
-          isConnecting={isConnecting}
-        />
-      </>
+      <Button
+        onClick={openConnectModal}
+        disabled={isConnecting}
+        className="gap-2 bg-primary hover:bg-primary/90 glow-primary"
+      >
+        <Wallet className="h-4 w-4" />
+        {isConnecting ? t('wallet.connecting') : t('wallet.connect')}
+      </Button>
     );
   }
 
@@ -75,11 +59,11 @@ export function WalletButton() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="gap-2 border-primary/50 hover:border-primary">
-          {/* Wallet icon from provider */}
-          {selectedProvider?.info.icon ? (
+          {/* Wallet icon from connector */}
+          {connectorInfo?.icon ? (
             <img 
-              src={selectedProvider.info.icon} 
-              alt={selectedProvider.info.name}
+              src={connectorInfo.icon} 
+              alt={connectorInfo.name}
               className="h-4 w-4 rounded-sm"
             />
           ) : (
@@ -90,11 +74,11 @@ export function WalletButton() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         {/* Wallet name */}
-        {selectedProvider && (
+        {connectorInfo && (
           <>
             <div className="px-2 py-1.5">
               <p className="text-xs text-muted-foreground">Connected with</p>
-              <p className="text-sm font-medium">{selectedProvider.info.name}</p>
+              <p className="text-sm font-medium">{connectorInfo.name}</p>
             </div>
             <DropdownMenuSeparator />
           </>
