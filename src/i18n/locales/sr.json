@@ -14,7 +14,13 @@
     "back": "Nazad",
     "next": "Dalje",
     "language": "Jezik",
-    "or": "ili"
+    "or": "ili",
+    "connectedWith": "Povezan sa",
+    "max": "max",
+    "players": "igrača",
+    "tableFull": "Sto je pun",
+    "inProgress": "U toku",
+    "waitingPlayers": "Čeka igrače"
   },
   "nav": {
     "lobby": "Lobi",
@@ -74,6 +80,17 @@
     "blinds": "Blindovi",
     "avgPot": "Prosečan pot",
     "noTables": "Nema dostupnih stolova",
+    "tableCount": "{{count}} sto",
+    "tableCount_few": "{{count}} stola",
+    "tableCount_other": "{{count}} stolova",
+    "tableName": "Ime stola",
+    "tableNamePlaceholder": "npr. High Rollers",
+    "numberOfPlayers": "Broj igrača",
+    "setupDescription": "Podesi parametre za novi poker sto",
+    "enterTableName": "Molimo unesite ime stola",
+    "tableCreated": "Sto je napravljen!",
+    "tableReady": "{{name}} je spreman za igru",
+    "createFailed": "Neuspelo kreiranje stola",
     "filters": {
       "all": "Svi",
       "fivePlayer": "5 igrača",
@@ -98,7 +115,13 @@
     "leave": "Napusti sto",
     "waitingForTurn": "Čekaj svoj potez...",
     "sidePot": "Sporedni pot",
-    "dealingCards": "Deljenje karata..."
+    "dealingCards": "Deljenje karata...",
+    "backToLobby": "Nazad u lobi",
+    "connectToJoin": "Poveži novčanik da bi se pridružio igri",
+    "clickToJoin": "Klikni na prazno mesto da se pridružiš stolu",
+    "tableNotFound": "Sto nije pronađen",
+    "joinedSeat": "Pridružio si se mestu #{{seat}}",
+    "leftTable": "Napustio si sto"
   },
   "chips": {
     "buy": "Kupi čipove",
@@ -130,7 +153,9 @@
     "walletNotConnected": "Novčanik nije povezan",
     "insufficientBalance": "Nedovoljno sredstava",
     "transactionFailed": "Transakcija nije uspela",
-    "networkError": "Greška mreže"
+    "networkError": "Greška mreže",
+    "connectWallet": "Poveži novčanik",
+    "connectWalletDescription": "Molimo povežite novčanik da biste se pridružili stolu"
   },
   "footer": {
     "poweredBy": "Pokreće OverProtocol",

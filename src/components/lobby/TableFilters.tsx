@@ -39,7 +39,7 @@ export function TableFilters({ activeFilter, onFilterChange, tableCount }: Table
       </div>
 
       <span className="text-sm text-muted-foreground">
-        {tableCount} {tableCount === 1 ? 'sto' : tableCount < 5 ? 'stola' : 'stolova'}
+        {t('lobby.tableCount', { count: tableCount })}
       </span>
     </div>
   );

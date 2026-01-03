@@ -77,7 +77,7 @@ export function WalletButton() {
         {connectorInfo && (
           <>
             <div className="px-2 py-1.5">
-              <p className="text-xs text-muted-foreground">Connected with</p>
+              <p className="text-xs text-muted-foreground">{t('common.connectedWith')}</p>
               <p className="text-sm font-medium">{connectorInfo.name}</p>
             </div>
             <DropdownMenuSeparator />

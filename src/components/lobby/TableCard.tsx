@@ -49,14 +49,14 @@ export function TableCard({ table }: TableCardProps) {
                 isWaiting ? 'bg-poker-gold/20 text-poker-gold border-poker-gold/30' : ''
               )}
             >
-              {isWaiting ? 'Čeka igrače' : 'U toku'}
+              {isWaiting ? t('common.waitingPlayers') : t('common.inProgress')}
             </Badge>
           </div>
           <div className="text-right">
             <span className="text-2xl font-display font-bold text-foreground">
               {table.maxPlayers}
             </span>
-            <span className="text-xs text-muted-foreground block">max</span>
+            <span className="text-xs text-muted-foreground block">{t('common.max')}</span>
           </div>
         </div>
 
@@ -117,7 +117,7 @@ export function TableCard({ table }: TableCardProps) {
             isFull ? 'opacity-50' : 'glow-primary'
           )}
         >
-          {isFull ? 'Sto je pun' : t('lobby.joinTable')}
+          {isFull ? t('common.tableFull') : t('lobby.joinTable')}
         </Button>
       </CardFooter>
     </Card>

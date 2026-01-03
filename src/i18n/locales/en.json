@@ -14,7 +14,13 @@
     "back": "Back",
     "next": "Next",
     "language": "Language",
-    "or": "or"
+    "or": "or",
+    "connectedWith": "Connected with",
+    "max": "max",
+    "players": "players",
+    "tableFull": "Table Full",
+    "inProgress": "In Progress",
+    "waitingPlayers": "Waiting for players"
   },
   "nav": {
     "lobby": "Lobby",
@@ -74,6 +80,16 @@
     "blinds": "Blinds",
     "avgPot": "Avg Pot",
     "noTables": "No tables available",
+    "tableCount": "{{count}} table",
+    "tableCount_other": "{{count}} tables",
+    "tableName": "Table Name",
+    "tableNamePlaceholder": "e.g. High Rollers",
+    "numberOfPlayers": "Number of Players",
+    "setupDescription": "Set up parameters for a new poker table",
+    "enterTableName": "Please enter a table name",
+    "tableCreated": "Table created!",
+    "tableReady": "{{name}} is ready to play",
+    "createFailed": "Failed to create table",
     "filters": {
       "all": "All",
       "fivePlayer": "5 Players",
@@ -98,7 +114,13 @@
     "leave": "Leave Table",
     "waitingForTurn": "Waiting for your turn...",
     "sidePot": "Side Pot",
-    "dealingCards": "Dealing cards..."
+    "dealingCards": "Dealing cards...",
+    "backToLobby": "Back to Lobby",
+    "connectToJoin": "Connect your wallet to join the game",
+    "clickToJoin": "Click an empty seat to join the table",
+    "tableNotFound": "Table not found",
+    "joinedSeat": "You joined seat #{{seat}}",
+    "leftTable": "You have left the table"
   },
   "chips": {
     "buy": "Buy Chips",
@@ -130,7 +152,9 @@
     "walletNotConnected": "Wallet not connected",
     "insufficientBalance": "Insufficient balance",
     "transactionFailed": "Transaction failed",
-    "networkError": "Network error"
+    "networkError": "Network error",
+    "connectWallet": "Connect Wallet",
+    "connectWalletDescription": "Please connect your wallet to join a table"
   },
   "footer": {
     "poweredBy": "Powered by OverProtocol",
