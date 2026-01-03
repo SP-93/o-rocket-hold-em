@@ -1,5 +1,6 @@
 import { Card } from '@/types/poker';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface PlayingCardProps {
   card?: Card;
@@ -7,6 +8,7 @@ interface PlayingCardProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   dealing?: boolean;
+  delay?: number;
 }
 
 const suitSymbols = {
@@ -35,17 +37,43 @@ export function PlayingCard({
   size = 'md',
   className,
   dealing = false,
+  delay = 0,
 }: PlayingCardProps) {
   if (!card && !faceDown) return null;
 
   return (
-    <div 
+    <motion.div 
       className={cn(
-        'relative rounded-md shadow-lg transition-transform duration-300',
+        'relative rounded-md shadow-lg',
         sizes[size],
-        dealing && 'animate-card-deal',
         className
       )}
+      initial={dealing ? { 
+        y: -100, 
+        x: 0,
+        opacity: 0, 
+        rotateY: 180,
+        scale: 0.5 
+      } : false}
+      animate={{ 
+        y: 0, 
+        x: 0,
+        opacity: 1, 
+        rotateY: 0,
+        scale: 1 
+      }}
+      transition={{ 
+        type: 'spring',
+        stiffness: 300,
+        damping: 25,
+        delay: delay * 0.1,
+      }}
+      whileHover={{ 
+        y: -4, 
+        scale: 1.05,
+        transition: { duration: 0.2 }
+      }}
+      style={{ perspective: 1000 }}
     >
       {faceDown || !card ? (
         // Card back
@@ -71,6 +99,6 @@ export function PlayingCard({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

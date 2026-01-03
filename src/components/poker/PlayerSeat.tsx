@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { PlayingCard } from './PlayingCard';
 import { Card } from '@/types/poker';
 import { User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PlayerSeatProps {
   seatNumber: number;
@@ -40,46 +41,84 @@ const actionColors = {
   'all-in': 'bg-poker-red text-primary-foreground',
 };
 
+const actionAnimations = {
+  fold: { opacity: 0.5, scale: 0.95, rotate: -5 },
+  check: { scale: 1 },
+  call: { scale: 1.02 },
+  raise: { scale: 1.05, y: -5 },
+  'all-in': { scale: 1.1, y: -10 },
+};
+
 export function PlayerSeat({ seatNumber, player, position, className, onClick }: PlayerSeatProps) {
   const isEmpty = !player;
 
   return (
-    <div
+    <motion.div
       className={cn(
-        'absolute flex flex-col items-center gap-1 transition-all duration-300',
-        isEmpty && onClick && 'cursor-pointer hover:scale-105',
+        'absolute flex flex-col items-center gap-1',
+        isEmpty && onClick && 'cursor-pointer',
         className
       )}
       style={position}
       onClick={isEmpty && onClick ? onClick : undefined}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ 
+        opacity: 1, 
+        scale: 1,
+        ...(player?.lastAction ? actionAnimations[player.lastAction] : {})
+      }}
+      whileHover={isEmpty && onClick ? { scale: 1.1 } : undefined}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
       {/* Player cards */}
-      {player?.cards && player.cards.length > 0 && !player.isFolded && (
-        <div className="flex gap-0.5 mb-1">
-          {player.cards.map((card, i) => (
-            <PlayingCard 
-              key={i} 
-              card={card} 
-              size="sm"
-              className={cn(
-                i === 0 && '-rotate-6',
-                i === 1 && 'rotate-6 -ml-2'
-              )}
-            />
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {player?.cards && player.cards.length > 0 && !player.isFolded && (
+          <motion.div 
+            className="flex gap-0.5 mb-1"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0, rotate: 45 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          >
+            {player.cards.map((card, i) => (
+              <PlayingCard 
+                key={i} 
+                card={card} 
+                size="sm"
+                dealing={true}
+                delay={i}
+                className={cn(
+                  i === 0 && '-rotate-6',
+                  i === 1 && 'rotate-6 -ml-2'
+                )}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Player seat circle */}
-      <div
+      <motion.div
         className={cn(
-          'relative w-16 h-16 rounded-full border-2 flex items-center justify-center transition-all duration-300',
+          'relative w-16 h-16 rounded-full border-2 flex items-center justify-center',
           isEmpty 
             ? 'border-dashed border-muted-foreground/30 bg-muted/20' 
             : 'border-primary/50 bg-secondary',
-          player?.isTurn && 'ring-2 ring-poker-gold ring-offset-2 ring-offset-background animate-pulse-glow',
+          player?.isTurn && 'ring-2 ring-poker-gold ring-offset-2 ring-offset-background',
           player?.isFolded && 'opacity-50'
         )}
+        animate={player?.isTurn ? {
+          boxShadow: [
+            '0 0 0 0 rgba(212, 175, 55, 0)',
+            '0 0 20px 10px rgba(212, 175, 55, 0.3)',
+            '0 0 0 0 rgba(212, 175, 55, 0)',
+          ]
+        } : {}}
+        transition={player?.isTurn ? {
+          duration: 1.5,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        } : {}}
       >
         {isEmpty ? (
           <span className="text-xs text-muted-foreground">#{seatNumber}</span>
@@ -87,46 +126,86 @@ export function PlayerSeat({ seatNumber, player, position, className, onClick }:
           <>
             <User className="w-8 h-8 text-muted-foreground" />
             {/* Dealer button */}
-            {player.isDealer && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-chip-white text-card-suit-black text-[10px] font-bold flex items-center justify-center border border-border shadow-md">
-                D
-              </div>
-            )}
+            <AnimatePresence>
+              {player.isDealer && (
+                <motion.div 
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-chip-white text-card-suit-black text-[10px] font-bold flex items-center justify-center border border-border shadow-md"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  exit={{ scale: 0, rotate: 180 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                >
+                  D
+                </motion.div>
+              )}
+            </AnimatePresence>
             {/* Blind indicator */}
-            {(player.isSmallBlind || player.isBigBlind) && (
-              <div className={cn(
-                'absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center border shadow-md',
-                player.isSmallBlind ? 'bg-chip-blue text-primary-foreground' : 'bg-poker-gold text-accent-foreground'
-              )}>
-                {player.isSmallBlind ? 'SB' : 'BB'}
-              </div>
-            )}
+            <AnimatePresence>
+              {(player.isSmallBlind || player.isBigBlind) && (
+                <motion.div 
+                  className={cn(
+                    'absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center border shadow-md',
+                    player.isSmallBlind ? 'bg-chip-blue text-primary-foreground' : 'bg-poker-gold text-accent-foreground'
+                  )}
+                  initial={{ scale: 0, y: 10 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0, y: 10 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                >
+                  {player.isSmallBlind ? 'SB' : 'BB'}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
-      </div>
+      </motion.div>
 
       {/* Player info */}
-      {!isEmpty && (
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-xs font-medium text-foreground truncate max-w-20">
-            {player.displayName || formatAddress(player.walletAddress)}
-          </span>
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border">
-            <span className="text-xs font-bold text-poker-gold">
-              {formatChips(player.chipStack)}
+      <AnimatePresence>
+        {!isEmpty && (
+          <motion.div 
+            className="flex flex-col items-center gap-0.5"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+          >
+            <span className="text-xs font-medium text-foreground truncate max-w-20">
+              {player.displayName || formatAddress(player.walletAddress)}
             </span>
-          </div>
-          {/* Last action badge */}
-          {player.lastAction && (
-            <span className={cn(
-              'text-[10px] font-medium px-2 py-0.5 rounded-full uppercase',
-              actionColors[player.lastAction]
-            )}>
-              {player.lastAction}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+            <motion.div 
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border"
+              whileHover={{ scale: 1.05 }}
+            >
+              <motion.span 
+                className="text-xs font-bold text-poker-gold"
+                key={player.chipStack}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+              >
+                {formatChips(player.chipStack)}
+              </motion.span>
+            </motion.div>
+            {/* Last action badge */}
+            <AnimatePresence mode="wait">
+              {player.lastAction && (
+                <motion.span 
+                  key={player.lastAction}
+                  className={cn(
+                    'text-[10px] font-medium px-2 py-0.5 rounded-full uppercase',
+                    actionColors[player.lastAction]
+                  )}
+                  initial={{ opacity: 0, scale: 0.5, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, y: 10 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                >
+                  {player.lastAction}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
