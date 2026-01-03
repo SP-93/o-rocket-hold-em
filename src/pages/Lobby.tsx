@@ -6,6 +6,7 @@ import { TableCard } from '@/components/lobby/TableCard';
 import { TableFilters } from '@/components/lobby/TableFilters';
 import { CreateTableModal } from '@/components/lobby/CreateTableModal';
 import { WorldChat } from '@/components/lobby/WorldChat';
+import { TournamentsList } from '@/components/lobby/TournamentsList';
 import { Button } from '@/components/ui/button';
 import { usePokerLobby } from '@/hooks/usePokerLobby';
 import { useWalletContext } from '@/contexts/WalletContext';
@@ -140,8 +141,9 @@ export default function Lobby() {
           </div>
 
           {/* World Chat Sidebar */}
-          <aside className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-24 h-[calc(100vh-8rem)]">
+          <aside className="hidden lg:block w-80 flex-shrink-0 space-y-6">
+            <TournamentsList />
+            <div className="sticky top-24 h-[calc(100vh-20rem)]">
               <WorldChat walletAddress={address} username={username} />
             </div>
           </aside>

@@ -13,7 +13,7 @@ const CHIPS_PER_WOVER = 100;
 const ADMIN_WALLET_ADDRESS = '0x8334966329b7f4b459633696A8CA59118253bC89';
 
 interface ActionRequest {
-  action: 'get_balance' | 'verify_deposit' | 'join_table' | 'leave_table' | 'process_settlement' | 'sync_balance';
+  action: 'get_balance' | 'verify_deposit' | 'join_table' | 'leave_table' | 'process_settlement' | 'sync_balance' | 'request_payout' | 'admin_process_payout';
   wallet_address?: string;
   table_id?: string;
   chip_amount?: number;
@@ -340,6 +340,106 @@ serve(async (req) => {
           .single();
 
         return successResponse({ balance, synced: true });
+      }
+
+      case 'request_payout': {
+        const { chip_amount } = body;
+
+        if (!wallet_address || !chip_amount || chip_amount <= 0) {
+          return errorResponse('wallet_address and valid chip_amount required', 400);
+        }
+
+        // Get current balance
+        const { data: balance, error: balanceError } = await supabase
+          .from('player_balances')
+          .select('*')
+          .eq('wallet_address', wallet_address.toLowerCase())
+          .single();
+
+        if (balanceError || !balance) {
+          return errorResponse('Player balance not found', 404);
+        }
+
+        if (balance.available_chips < chip_amount) {
+          return errorResponse(`Insufficient chips. Available: ${balance.available_chips}, Requested: ${chip_amount}`, 400);
+        }
+
+        // Calculate WOVER amount (100 chips = 1 WOVER)
+        const wover_amount = chip_amount / CHIPS_PER_WOVER;
+
+        // Deduct chips from balance
+        const { error: updateError } = await supabase
+          .from('player_balances')
+          .update({
+            available_chips: balance.available_chips - chip_amount,
+            on_chain_chips: balance.on_chain_chips - chip_amount,
+          })
+          .eq('wallet_address', wallet_address.toLowerCase());
+
+        if (updateError) {
+          console.error('[chip-manager] Payout deduction error:', updateError);
+          return errorResponse('Failed to process payout request', 500);
+        }
+
+        // Record the pending payout event
+        const { error: eventError } = await supabase
+          .from('deposit_events')
+          .insert({
+            wallet_address: wallet_address.toLowerCase(),
+            tx_hash: `pending_${Date.now()}_${wallet_address.slice(0, 8)}`,
+            block_number: 0,
+            wover_amount,
+            chips_granted: chip_amount,
+            event_type: 'withdrawal_pending',
+            processed: false,
+          });
+
+        if (eventError) {
+          console.error('[chip-manager] Payout event error:', eventError);
+          // Rollback the deduction
+          await supabase
+            .from('player_balances')
+            .update({
+              available_chips: balance.available_chips,
+              on_chain_chips: balance.on_chain_chips,
+            })
+            .eq('wallet_address', wallet_address.toLowerCase());
+          return errorResponse('Failed to record payout request', 500);
+        }
+
+        console.log(`[chip-manager] Payout requested: ${chip_amount} chips = ${wover_amount} WOVER for ${wallet_address}`);
+        return successResponse({ 
+          success: true, 
+          chips_deducted: chip_amount,
+          wover_pending: wover_amount,
+          message: 'Payout request submitted. Admin will process your withdrawal.',
+        });
+      }
+
+      case 'admin_process_payout': {
+        // This would be called by admin after sending tokens
+        const { tx_hash, pending_id } = body as any;
+
+        if (!tx_hash || !pending_id) {
+          return errorResponse('tx_hash and pending_id required', 400);
+        }
+
+        // Update the pending event to processed
+        const { error: updateError } = await supabase
+          .from('deposit_events')
+          .update({ 
+            processed: true,
+            tx_hash,
+          })
+          .eq('id', pending_id);
+
+        if (updateError) {
+          console.error('[chip-manager] Admin payout update error:', updateError);
+          return errorResponse('Failed to update payout status', 500);
+        }
+
+        console.log(`[chip-manager] Admin processed payout: ${pending_id} with tx ${tx_hash}`);
+        return successResponse({ success: true });
       }
 
       default:
