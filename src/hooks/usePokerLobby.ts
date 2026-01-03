@@ -11,13 +11,26 @@ interface LobbyTable {
   current_players: number;
   avg_pot: number;
   created_at: string;
+  is_private: boolean;
+  creator_wallet: string | null;
 }
 
 interface UsePokerLobbyResult {
   tables: LobbyTable[];
   loading: boolean;
   error: string | null;
-  createTable: (name: string, maxPlayers: 5 | 6, smallBlind: number, bigBlind: number) => Promise<string | null>;
+  createTable: (
+    name: string, 
+    maxPlayers: 5 | 6, 
+    smallBlind: number, 
+    bigBlind: number,
+    isPrivate?: boolean,
+    password?: string,
+    allowedPlayers?: string[],
+    creatorWallet?: string,
+    creationFeeTx?: string,
+    creationFeeToken?: string
+  ) => Promise<string | null>;
   refetch: () => Promise<void>;
 }
 
@@ -42,7 +55,9 @@ export function usePokerLobby(): UsePokerLobbyResult {
           big_blind,
           status,
           pot,
-          created_at
+          created_at,
+          is_private,
+          creator_wallet
         `)
         .order('created_at', { ascending: false });
 
@@ -74,6 +89,8 @@ export function usePokerLobby(): UsePokerLobbyResult {
         current_players: playerCounts[table.id] || 0,
         avg_pot: table.pot || 0,
         created_at: table.created_at,
+        is_private: table.is_private ?? false,
+        creator_wallet: table.creator_wallet,
       }));
 
       setTables(formattedTables);
@@ -126,7 +143,13 @@ export function usePokerLobby(): UsePokerLobbyResult {
     name: string,
     maxPlayers: 5 | 6,
     smallBlind: number,
-    bigBlind: number
+    bigBlind: number,
+    isPrivate: boolean = false,
+    password?: string,
+    allowedPlayers?: string[],
+    creatorWallet?: string,
+    creationFeeTx?: string,
+    creationFeeToken?: string
   ): Promise<string | null> => {
     try {
       const { data, error } = await supabase
@@ -136,6 +159,12 @@ export function usePokerLobby(): UsePokerLobbyResult {
           max_players: maxPlayers,
           small_blind: smallBlind,
           big_blind: bigBlind,
+          is_private: isPrivate,
+          table_password: isPrivate && password ? password : null,
+          allowed_players: isPrivate && allowedPlayers ? allowedPlayers : [],
+          creator_wallet: isPrivate && creatorWallet ? creatorWallet.toLowerCase() : null,
+          creation_fee_tx: isPrivate && creationFeeTx ? creationFeeTx : null,
+          creation_fee_token: isPrivate && creationFeeToken ? creationFeeToken : null,
         })
         .select('id')
         .single();

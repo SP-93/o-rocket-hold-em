@@ -89,11 +89,24 @@
     "enterTableName": "Please enter a table name",
     "tableCreated": "Table created!",
     "tableReady": "{{name}} is ready to play",
+    "privateTableReady": "Private table {{name}} is ready",
     "createFailed": "Failed to create table",
+    "privateTable": "Private Table",
+    "privateTableDesc": "Only invited players can join",
+    "tablePassword": "Table Password",
+    "passwordPlaceholder": "Enter password (optional)",
+    "invitePlayers": "Invite Players",
+    "invitePlaceholder": "0x123..., 0x456...",
+    "inviteHint": "Comma-separated wallet addresses",
+    "creationFee": "Private Table Fee",
+    "payAndCreate": "Pay {{amount}} {{token}} & Create",
+    "processingPayment": "Processing Payment...",
     "filters": {
       "all": "All",
       "fivePlayer": "5 Players",
-      "sixPlayer": "6 Players"
+      "sixPlayer": "6 Players",
+      "public": "Public",
+      "private": "Private"
     }
   },
   "table": {

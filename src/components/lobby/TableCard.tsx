@@ -1,14 +1,23 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { PokerTable } from '@/types/poker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Coins, TrendingUp } from 'lucide-react';
+import { Users, Coins, TrendingUp, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TableCardProps {
-  table: PokerTable;
+  table: {
+    id: string;
+    name: string;
+    maxPlayers: number;
+    currentPlayers: number;
+    smallBlind: number;
+    bigBlind: number;
+    status: string;
+    avgPot: number;
+    isPrivate?: boolean;
+  };
 }
 
 export function TableCard({ table }: TableCardProps) {
@@ -39,18 +48,29 @@ export function TableCard({ table }: TableCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-              {table.name}
-            </h3>
-            <Badge
-              variant={isWaiting ? 'secondary' : 'default'}
-              className={cn(
-                'mt-1',
-                isWaiting ? 'bg-poker-gold/20 text-poker-gold border-poker-gold/30' : ''
+            <div className="flex items-center gap-2">
+              <h3 className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                {table.name}
+              </h3>
+              {table.isPrivate && (
+                <Lock className="w-4 h-4 text-poker-gold" />
               )}
-            >
-              {isWaiting ? t('common.waitingPlayers') : t('common.inProgress')}
-            </Badge>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge
+                variant={isWaiting ? 'secondary' : 'default'}
+                className={cn(
+                  isWaiting ? 'bg-poker-gold/20 text-poker-gold border-poker-gold/30' : ''
+                )}
+              >
+                {isWaiting ? t('common.waitingPlayers') : t('common.inProgress')}
+              </Badge>
+              {table.isPrivate && (
+                <Badge variant="outline" className="text-xs border-poker-gold/50 text-poker-gold">
+                  {t('lobby.filters.private')}
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="text-right">
             <span className="text-2xl font-display font-bold text-foreground">
