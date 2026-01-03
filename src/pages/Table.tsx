@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { BuyInModal } from '@/components/poker/BuyInModal';
 import { usePokerTable } from '@/hooks/usePokerTable';
 import { useTableChat } from '@/hooks/useTableChat';
 import { useWalletContext } from '@/contexts/WalletContext';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { toast } from '@/hooks/use-toast';
 import { Card } from '@/types/poker';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +22,8 @@ export default function Table() {
   const { table, seats, loading, error, joinTable, leaveTable, performAction } = usePokerTable(id || '');
   const { messages, sendMessage } = useTableChat(id || '');
   const { address, isConnected } = useWalletContext();
+  const { playSound } = usePokerSounds();
+  const wasPlayerTurn = useRef(false);
 
   // Buy-in modal state
   const [buyInModalOpen, setBuyInModalOpen] = useState(false);
@@ -30,6 +33,18 @@ export default function Table() {
   // Find current player's seat
   const playerSeat = seats.find(s => s.player_wallet?.toLowerCase() === address?.toLowerCase());
   const isPlayerTurn = playerSeat?.is_turn || false;
+
+  // Play sound and show toast when it becomes player's turn
+  useEffect(() => {
+    if (isPlayerTurn && !wasPlayerTurn.current) {
+      playSound('yourTurn');
+      toast({
+        title: t('table.yourTurn'),
+        description: t('table.makeYourMove'),
+      });
+    }
+    wasPlayerTurn.current = isPlayerTurn;
+  }, [isPlayerTurn, playSound, t]);
 
   // Convert seats to player format for PokerTable component
   const players = seats.map(seat => {
