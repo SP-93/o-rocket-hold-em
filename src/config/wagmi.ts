@@ -24,9 +24,8 @@ export const overProtocol = defineChain({
   },
 });
 
-// WalletConnect Project ID - will be added later
-// For now, we'll use injected wallets only
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
+// WalletConnect Project ID (public key - safe to expose)
+export const WALLETCONNECT_PROJECT_ID = '664dcc03f0df47cb7978c8b12da7bf40';
 
 // Wagmi config
 export const wagmiConfig = createConfig({
@@ -35,8 +34,8 @@ export const wagmiConfig = createConfig({
     injected({
       shimDisconnect: true,
     }),
-    ...(projectId ? [walletConnect({
-      projectId,
+    walletConnect({
+      projectId: WALLETCONNECT_PROJECT_ID,
       metadata: {
         name: 'O\'Poker',
         description: 'Decentralized Poker on OverProtocol',
@@ -44,7 +43,7 @@ export const wagmiConfig = createConfig({
         icons: ['https://over.network/favicon.ico'],
       },
       showQrModal: false, // Web3Modal will handle this
-    })] : []),
+    }),
   ],
   transports: {
     [overProtocol.id]: http(),
