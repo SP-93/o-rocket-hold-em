@@ -91,10 +91,14 @@
     "check": "Check",
     "call": "Call",
     "raise": "Raise",
-    "allIn": "All-in",
+    "raiseTo": "Raise to",
+    "allIn": "All In",
     "halfPot": "1/2 Pot",
     "fullPot": "Pot",
-    "leave": "Leave Table"
+    "leave": "Leave Table",
+    "waitingForTurn": "Waiting for your turn...",
+    "sidePot": "Side Pot",
+    "dealingCards": "Dealing cards..."
   },
   "chips": {
     "buy": "Buy Chips",
