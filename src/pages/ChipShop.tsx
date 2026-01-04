@@ -6,11 +6,12 @@ import { useWalletContext } from '@/contexts/WalletContext';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useChipBalance } from '@/hooks/useChipBalance';
 import { useWoverBalance, TOKEN_ADDRESSES, ADMIN_WALLET, WOVER_DECIMALS } from '@/hooks/useTokenBalance';
+import { usePokerChipManager, POKER_CHIP_MANAGER_ADDRESS } from '@/hooks/usePokerChipManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Coins, ArrowDownToLine, ArrowUpFromLine, Wallet, RefreshCw, Info, CircleDollarSign } from 'lucide-react';
+import { Coins, ArrowDownToLine, ArrowUpFromLine, Wallet, RefreshCw, Info, CircleDollarSign, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseUnits } from 'viem';
 import { Link } from 'react-router-dom';
@@ -41,7 +42,18 @@ export default function ChipShop() {
     address as `0x${string}` | undefined
   );
 
-  // Write contract for WOVER transfer
+  // Smart contract integration
+  const { 
+    isContractDeployed,
+    buyIn: contractBuyIn,
+    cashOut: contractCashOut,
+    isPending: isContractPending,
+    isConfirming: isContractConfirming,
+    isSuccess: isContractSuccess,
+    refetchAll: refetchContract
+  } = usePokerChipManager(address as `0x${string}` | undefined);
+
+  // Write contract for WOVER transfer (legacy method when contract not deployed)
   const { writeContract, data: txHash, isPending: isTxPending } = useWriteContract();
   
   // Wait for transaction
@@ -65,18 +77,25 @@ export default function ChipShop() {
     }
 
     try {
-      const amountWei = parseUnits(depositAmount, WOVER_DECIMALS);
-      
-      writeContract({
-        address: TOKEN_ADDRESSES.WOVER,
-        abi: ERC20_TRANSFER_ABI,
-        functionName: 'transfer',
-        args: [ADMIN_WALLET, amountWei],
-        chain: overProtocol,
-        account: address as `0x${string}`,
-      });
+      if (isContractDeployed) {
+        // Use smart contract for deposits
+        await contractBuyIn(depositAmount);
+        toast.success(t('chipShop.depositPending'));
+      } else {
+        // Legacy method: transfer to admin wallet
+        const amountWei = parseUnits(depositAmount, WOVER_DECIMALS);
+        
+        writeContract({
+          address: TOKEN_ADDRESSES.WOVER,
+          abi: ERC20_TRANSFER_ABI,
+          functionName: 'transfer',
+          args: [ADMIN_WALLET, amountWei],
+          chain: overProtocol,
+          account: address as `0x${string}`,
+        });
 
-      toast.success(t('chipShop.depositPending'));
+        toast.success(t('chipShop.depositPending'));
+      }
     } catch (error) {
       console.error('Deposit error:', error);
       toast.error(t('errors.transactionFailed'));
@@ -95,18 +114,26 @@ export default function ChipShop() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('process-withdrawal', {
-        body: {
-          wallet_address: address,
-          chip_amount: parseFloat(withdrawAmount),
-        },
-      });
+      if (isContractDeployed) {
+        // Use smart contract for withdrawals - direct on-chain cashout
+        await contractCashOut(withdrawAmount);
+        toast.success(t('chipShop.withdrawProcessing'));
+        setWithdrawAmount('');
+      } else {
+        // Legacy method: use edge function
+        const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+          body: {
+            wallet_address: address,
+            chip_amount: parseFloat(withdrawAmount),
+          },
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast.success(t('chipShop.withdrawQueued'));
-      setWithdrawAmount('');
-      refetchChips();
+        toast.success(t('chipShop.withdrawQueued'));
+        setWithdrawAmount('');
+        refetchChips();
+      }
     } catch (error) {
       console.error('Withdrawal error:', error);
       toast.error(t('errors.withdrawalFailed'));
@@ -116,8 +143,14 @@ export default function ChipShop() {
   const refreshBalances = () => {
     refetchChips();
     refetchWover();
+    if (isContractDeployed) {
+      refetchContract();
+    }
     toast.success(t('chipShop.balancesRefreshed'));
   };
+
+  // Combined pending state
+  const isAnyPending = isTxPending || isContractPending || isConfirming || isContractConfirming;
 
   if (!isConnected) {
     return (
@@ -281,7 +314,7 @@ export default function ChipShop() {
 
                   <Button
                     onClick={handleDeposit}
-                    disabled={!depositAmount || parseFloat(depositAmount) <= 0 || isTxPending || isConfirming}
+                    disabled={!depositAmount || parseFloat(depositAmount) <= 0 || isAnyPending}
                     className="w-full"
                     size="lg"
                   >

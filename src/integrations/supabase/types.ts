@@ -542,11 +542,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_visible_seat_cards: {
+        Args: {
+          requesting_wallet: string
+          seat_cards: Json
+          seat_player_wallet: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _wallet: string
         }
+        Returns: boolean
+      }
+      is_table_creator: {
+        Args: { table_creator: string; user_wallet: string }
         Returns: boolean
       }
     }

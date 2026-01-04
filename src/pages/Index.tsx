@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
 import { useWalletContext } from '@/contexts/WalletContext';
 import { PokerCardSVG } from '@/components/poker/PokerCardSVG';
+import { PokerChip } from '@/components/poker/PokerChip';
 import { Rocket, Coins, Users, Shield, ChevronRight, Sparkles } from 'lucide-react';
 
 const fadeInUp = {
@@ -44,30 +45,56 @@ export default function Index() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.15),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--poker-gold)/0.1),transparent_60%)]" />
         
-        {/* Floating poker card decorations - replacing blur circles */}
+        {/* Floating poker card decorations */}
         <motion.div 
-          className="absolute top-20 left-[8%] w-16 h-24 opacity-60"
+          className="absolute top-20 left-[8%] w-16 h-24 opacity-70"
           animate={floatAnimation}
         >
           <PokerCardSVG suit="spades" rank="A" className="w-full h-full" />
         </motion.div>
         <motion.div 
-          className="absolute top-28 right-[10%] w-14 h-20 -rotate-12 opacity-50"
+          className="absolute top-28 right-[10%] w-14 h-20 -rotate-12 opacity-60"
           animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 1 } }}
         >
           <PokerCardSVG suit="hearts" rank="K" className="w-full h-full" />
         </motion.div>
         <motion.div 
-          className="absolute bottom-32 left-[15%] w-12 h-18 rotate-6 opacity-40"
+          className="absolute bottom-32 left-[15%] w-12 h-18 rotate-6 opacity-50"
           animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 0.5 } }}
         >
           <PokerCardSVG suit="diamonds" rank="Q" className="w-full h-full" />
         </motion.div>
         <motion.div 
-          className="absolute bottom-40 right-[18%] w-10 h-15 -rotate-6 opacity-35"
+          className="absolute bottom-40 right-[18%] w-10 h-15 -rotate-6 opacity-45"
           animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 1.5 } }}
         >
           <PokerCardSVG suit="clubs" rank="J" className="w-full h-full" />
+        </motion.div>
+        
+        {/* Decorative poker chips */}
+        <motion.div 
+          className="absolute top-36 left-[22%] opacity-60"
+          animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 0.3 } }}
+        >
+          <PokerChip value={100} size="md" />
+        </motion.div>
+        <motion.div 
+          className="absolute bottom-48 right-[12%] opacity-50"
+          animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 0.8 } }}
+        >
+          <PokerChip value={25} size="lg" />
+        </motion.div>
+        <motion.div 
+          className="absolute top-48 right-[25%] opacity-40"
+          animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 1.2 } }}
+        >
+          <PokerChip value={5} size="sm" />
+        </motion.div>
+        <motion.div 
+          className="absolute bottom-56 left-[8%] opacity-55"
+          animate={{ ...floatAnimation, transition: { ...floatAnimation.transition, delay: 2 } }}
+        >
+          <PokerChip value={500} size="md" />
         </motion.div>
         
         <div className="container relative z-10 py-16">

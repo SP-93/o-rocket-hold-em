@@ -10,8 +10,13 @@ import { Globe, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const languages = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'sr', name: 'Srpski', flag: '🇷🇸' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
 ];
 
 export function LanguageSwitcher() {
