@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useWalletContext } from '@/contexts/WalletContext';
-import { usePlayerProfile } from '@/hooks/usePlayerProfile';
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -49,8 +49,14 @@ interface PlatformConfig {
 export default function Admin() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { address, isConnected } = useWalletContext();
-  const { isAdmin, isLoading: profileLoading } = usePlayerProfile(address);
+  const { address, isConnected, isAdmin } = useWalletContext();
+  const [profileLoading, setProfileLoading] = useState(true);
+  
+  // Initial load delay to let WalletContext sync
+  useEffect(() => {
+    const timer = setTimeout(() => setProfileLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [tables, setTables] = useState<TableData[]>([]);
   const [configs, setConfigs] = useState<PlatformConfig[]>([]);
