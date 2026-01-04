@@ -89,6 +89,13 @@ export type Database = {
             referencedRelation: "poker_tables"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "game_actions_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       game_settlements: {
@@ -122,6 +129,13 @@ export type Database = {
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_settlements_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -242,6 +256,7 @@ export type Database = {
           is_private: boolean | null
           max_players: number
           name: string
+          password_protected: boolean | null
           pot: number
           small_blind: number
           status: string
@@ -264,6 +279,7 @@ export type Database = {
           is_private?: boolean | null
           max_players?: number
           name: string
+          password_protected?: boolean | null
           pot?: number
           small_blind?: number
           status?: string
@@ -286,6 +302,7 @@ export type Database = {
           is_private?: boolean | null
           max_players?: number
           name?: string
+          password_protected?: boolean | null
           pot?: number
           small_blind?: number
           status?: string
@@ -325,6 +342,13 @@ export type Database = {
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_chat_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -396,6 +420,13 @@ export type Database = {
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_seats_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -581,7 +612,153 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      poker_tables_safe: {
+        Row: {
+          active_player_seat: number | null
+          allowed_players: string[] | null
+          big_blind: number | null
+          community_cards: Json | null
+          created_at: string | null
+          creation_fee_token: string | null
+          creation_fee_tx: string | null
+          creator_wallet: string | null
+          current_bet: number | null
+          current_phase: string | null
+          dealer_position: number | null
+          id: string | null
+          is_private: boolean | null
+          max_players: number | null
+          name: string | null
+          password_protected: boolean | null
+          pot: number | null
+          small_blind: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_player_seat?: number | null
+          allowed_players?: string[] | null
+          big_blind?: number | null
+          community_cards?: Json | null
+          created_at?: string | null
+          creation_fee_token?: string | null
+          creation_fee_tx?: string | null
+          creator_wallet?: string | null
+          current_bet?: number | null
+          current_phase?: string | null
+          dealer_position?: number | null
+          id?: string | null
+          is_private?: boolean | null
+          max_players?: number | null
+          name?: string | null
+          password_protected?: boolean | null
+          pot?: number | null
+          small_blind?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_player_seat?: number | null
+          allowed_players?: string[] | null
+          big_blind?: number | null
+          community_cards?: Json | null
+          created_at?: string | null
+          creation_fee_token?: string | null
+          creation_fee_tx?: string | null
+          creator_wallet?: string | null
+          current_bet?: number | null
+          current_phase?: string | null
+          dealer_position?: number | null
+          id?: string | null
+          is_private?: boolean | null
+          max_players?: number | null
+          name?: string | null
+          password_protected?: boolean | null
+          pot?: number | null
+          small_blind?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      table_seats_safe: {
+        Row: {
+          cards: Json | null
+          chip_stack: number | null
+          created_at: string | null
+          current_bet: number | null
+          id: string | null
+          is_big_blind: boolean | null
+          is_dealer: boolean | null
+          is_folded: boolean | null
+          is_small_blind: boolean | null
+          is_turn: boolean | null
+          last_action: string | null
+          on_chain_buy_in: number | null
+          player_name: string | null
+          player_wallet: string | null
+          seat_number: number | null
+          table_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cards?: never
+          chip_stack?: number | null
+          created_at?: string | null
+          current_bet?: number | null
+          id?: string | null
+          is_big_blind?: boolean | null
+          is_dealer?: boolean | null
+          is_folded?: boolean | null
+          is_small_blind?: boolean | null
+          is_turn?: boolean | null
+          last_action?: string | null
+          on_chain_buy_in?: number | null
+          player_name?: string | null
+          player_wallet?: string | null
+          seat_number?: number | null
+          table_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cards?: never
+          chip_stack?: number | null
+          created_at?: string | null
+          current_bet?: number | null
+          id?: string | null
+          is_big_blind?: boolean | null
+          is_dealer?: boolean | null
+          is_folded?: boolean | null
+          is_small_blind?: boolean | null
+          is_turn?: boolean | null
+          last_action?: string | null
+          on_chain_buy_in?: number | null
+          player_name?: string | null
+          player_wallet?: string | null
+          seat_number?: number | null
+          table_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_seats_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_seats_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_visible_seat_cards: {
