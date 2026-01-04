@@ -63,9 +63,9 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
       setError(null);
 
       try {
-        // Fetch table
+        // Fetch table from safe view (hides password)
         const { data: tableData, error: tableError } = await supabase
-          .from('poker_tables')
+          .from('poker_tables_safe')
           .select('*')
           .eq('id', tableId)
           .maybeSingle();
@@ -84,9 +84,9 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
           community_cards: parseCards(tableData.community_cards),
         });
 
-        // Fetch seats
+        // Fetch seats from safe view (hides other players' cards)
         const { data: seatsData, error: seatsError } = await supabase
-          .from('table_seats')
+          .from('table_seats_safe')
           .select('*')
           .eq('table_id', tableId)
           .order('seat_number');
@@ -195,7 +195,7 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
     };
   }, [tableId]);
 
-  // Join table - validates chips via chip-manager edge function
+  // Join table - uses table-manager edge function for security
   const joinTable = useCallback(async (
     seatNumber: number,
     walletAddress: string,
@@ -227,25 +227,19 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
 
       console.log('[usePokerTable] Chips locked successfully:', chipData);
 
-      // Now update the seat
-      const { error } = await supabase
-        .from('table_seats')
-        .update({
-          player_wallet: walletAddress.toLowerCase(),
-          player_name: playerName || null,
-          chip_stack: buyIn,
-          on_chain_buy_in: buyIn,
-          is_folded: false,
-          last_action: null,
-          current_bet: 0,
-        })
-        .eq('table_id', tableId)
-        .eq('seat_number', seatNumber)
-        .is('player_wallet', null);
+      // Join seat via table-manager edge function (uses service role)
+      const { data, error } = await supabase.functions.invoke('table-manager', {
+        body: {
+          action: 'join_seat',
+          tableId,
+          seatNumber,
+          buyIn,
+        },
+      });
 
-      if (error) {
-        // If seat update failed, we should unlock the chips
-        console.error('[usePokerTable] Seat update failed, unlocking chips:', error);
+      if (error || data?.error) {
+        // If seat join failed, unlock the chips
+        console.error('[usePokerTable] Join seat failed:', error || data?.error);
         await supabase.functions.invoke('chip-manager', {
           body: {
             action: 'leave_table',
@@ -254,17 +248,10 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
             amount: buyIn,
           },
         });
-        throw error;
+        throw new Error(data?.error || 'Failed to join seat');
       }
 
-      // Log action
-      await supabase.from('game_actions').insert({
-        table_id: tableId,
-        player_wallet: walletAddress.toLowerCase(),
-        action: 'join',
-        amount: buyIn,
-      });
-
+      console.log('[usePokerTable] Joined seat successfully');
       return true;
     } catch (err) {
       console.error('Error joining table:', err);
@@ -272,39 +259,27 @@ export function usePokerTable(tableId: string): UsePokerTableResult {
     }
   }, [tableId]);
 
-  // Leave table
+  // Leave table - uses table-manager edge function for security
   const leaveTable = useCallback(async (seatNumber: number): Promise<boolean> => {
     try {
       const seat = seats.find(s => s.seat_number === seatNumber);
       if (!seat?.player_wallet) return false;
 
-      const { error } = await supabase
-        .from('table_seats')
-        .update({
-          player_wallet: null,
-          player_name: null,
-          chip_stack: 0,
-          cards: [],
-          is_dealer: false,
-          is_small_blind: false,
-          is_big_blind: false,
-          is_turn: false,
-          is_folded: false,
-          last_action: null,
-          current_bet: 0,
-        })
-        .eq('table_id', tableId)
-        .eq('seat_number', seatNumber);
-
-      if (error) throw error;
-
-      // Log action
-      await supabase.from('game_actions').insert({
-        table_id: tableId,
-        player_wallet: seat.player_wallet,
-        action: 'leave',
+      // Leave via table-manager edge function
+      const { data, error } = await supabase.functions.invoke('table-manager', {
+        body: {
+          action: 'leave_seat',
+          tableId,
+          seatNumber,
+        },
       });
 
+      if (error || data?.error) {
+        console.error('[usePokerTable] Leave seat failed:', error || data?.error);
+        throw new Error(data?.error || 'Failed to leave seat');
+      }
+
+      console.log('[usePokerTable] Left seat successfully, chips returned:', data?.chipsReturned);
       return true;
     } catch (err) {
       console.error('Error leaving table:', err);

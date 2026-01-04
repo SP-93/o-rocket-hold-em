@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.tournament-engine]
 verify_jwt = false
+
+[functions.table-manager]
+verify_jwt = false
+
+[functions.admin-operations]
+verify_jwt = false
