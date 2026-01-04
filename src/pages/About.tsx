@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import hippoLabLogo from '@/assets/hippo-lab-logo.jpg';
 import { motion } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -86,9 +87,11 @@ export default function About() {
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
             <CardContent className="p-8 md:p-12">
               <div className="flex items-center gap-4 mb-6">
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-poker-gold/20 border border-primary/30 flex items-center justify-center">
-                  <span className="text-3xl">🦛</span>
-                </div>
+                <img 
+                  src={hippoLabLogo} 
+                  alt="Over Hippo Lab" 
+                  className="h-16 w-16 rounded-2xl object-cover border border-primary/30"
+                />
                 <div>
                   <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">Over Hippo Lab</h2>
                   <p className="text-muted-foreground">Private Development Lab on Over Protocol</p>
