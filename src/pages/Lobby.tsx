@@ -7,9 +7,10 @@ import { CreateTableModal } from '@/components/lobby/CreateTableModal';
 import { WorldChat } from '@/components/lobby/WorldChat';
 import { TournamentsList } from '@/components/lobby/TournamentsList';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { usePokerLobby } from '@/hooks/usePokerLobby';
 import { useWalletContext } from '@/contexts/WalletContext';
-import { Plus, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 
 type FilterType = 'all' | '5' | '6';
 
@@ -18,7 +19,7 @@ export default function Lobby() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
-  const { tables, loading, refetch, createTable } = usePokerLobby();
+  const { tables, loading, error, refetch, createTable } = usePokerLobby();
   const { address, username, isAdmin } = useWalletContext();
 
   const filteredTables = useMemo(() => {
@@ -84,6 +85,15 @@ export default function Lobby() {
                 tableCount={filteredTables.length}
               />
             </div>
+
+            {/* Error state */}
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error loading tables</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             {/* Loading state */}
             {loading && tables.length === 0 ? (
