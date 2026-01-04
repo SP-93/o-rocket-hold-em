@@ -59,6 +59,7 @@ export type Database = {
           phase: string | null
           player_wallet: string
           table_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -68,6 +69,7 @@ export type Database = {
           phase?: string | null
           player_wallet: string
           table_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -77,6 +79,7 @@ export type Database = {
           phase?: string | null
           player_wallet?: string
           table_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -157,6 +160,7 @@ export type Database = {
           total_deposited_wover: number
           total_withdrawn_wover: number
           updated_at: string
+          user_id: string | null
           wallet_address: string
         }
         Insert: {
@@ -171,6 +175,7 @@ export type Database = {
           total_deposited_wover?: number
           total_withdrawn_wover?: number
           updated_at?: string
+          user_id?: string | null
           wallet_address: string
         }
         Update: {
@@ -185,6 +190,7 @@ export type Database = {
           total_deposited_wover?: number
           total_withdrawn_wover?: number
           updated_at?: string
+          user_id?: string | null
           wallet_address?: string
         }
         Relationships: []
@@ -195,6 +201,7 @@ export type Database = {
           created_at: string | null
           id: string
           updated_at: string | null
+          user_id: string | null
           username: string
           wallet_address: string
         }
@@ -203,6 +210,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           updated_at?: string | null
+          user_id?: string | null
           username: string
           wallet_address: string
         }
@@ -211,6 +219,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           updated_at?: string | null
+          user_id?: string | null
           username?: string
           wallet_address?: string
         }
@@ -339,6 +348,7 @@ export type Database = {
           seat_number: number
           table_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           cards?: Json | null
@@ -358,6 +368,7 @@ export type Database = {
           seat_number: number
           table_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           cards?: Json | null
@@ -377,6 +388,7 @@ export type Database = {
           seat_number?: number
           table_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -509,6 +521,36 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      user_wallets: {
+        Row: {
+          connected_at: string | null
+          id: string
+          is_primary: boolean | null
+          label: string | null
+          last_used_at: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          connected_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          label?: string | null
+          last_used_at?: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          connected_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          label?: string | null
+          last_used_at?: string | null
+          user_id?: string
           wallet_address?: string
         }
         Relationships: []
