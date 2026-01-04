@@ -64,15 +64,25 @@ export function usePokerLobby(): UsePokerLobbyResult {
 
       if (tablesError) throw tablesError;
 
-      // Fetch player counts for each table
-      const tableIds = (tablesData || []).map(t => t.id);
-      const { data: seatsData, error: seatsError } = await supabase
-        .from('table_seats')
-        .select('table_id, player_wallet')
-        .in('table_id', tableIds)
-        .not('player_wallet', 'is', null);
+      console.log('[usePokerLobby] tablesData:', tablesData?.length ?? 0, 'tables');
 
-      if (seatsError) throw seatsError;
+      // Fetch player counts for each table (guard against empty array)
+      const tableIds = (tablesData || []).map(t => t.id).filter(Boolean);
+      
+      let seatsData: { table_id: string; player_wallet: string }[] = [];
+      if (tableIds.length > 0) {
+        const { data, error: seatsError } = await supabase
+          .from('table_seats')
+          .select('table_id, player_wallet')
+          .in('table_id', tableIds)
+          .not('player_wallet', 'is', null);
+
+        if (seatsError) {
+          console.error('[usePokerLobby] seatsError:', seatsError.message);
+          throw seatsError;
+        }
+        seatsData = data || [];
+      }
 
       // Count players per table
       const playerCounts: Record<string, number> = {};
