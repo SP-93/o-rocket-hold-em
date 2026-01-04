@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     const { action, tableId, seatNumber, amount } = await req.json();
 
     // Actions that require authentication
-    const authRequiredActions = ['process_action', 'start_game'];
+    const authRequiredActions = ['process_action', 'start_game', 'deal_community', 'showdown'];
     
     let currentUser = null;
     if (authRequiredActions.includes(action)) {
@@ -93,6 +93,20 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "start_game": {
+        // SECURITY: Verify user is seated at this table
+        const { data: userSeat } = await supabase
+          .from("table_seats")
+          .select("*")
+          .eq("table_id", tableId)
+          .eq("user_id", currentUser.id)
+          .not("player_wallet", "is", null)
+          .maybeSingle();
+
+        if (!userSeat) {
+          console.log(`[poker-game] SECURITY: User ${currentUser.id} tried to start game without being seated`);
+          return errorResponse("You must be seated at this table to start the game", 403);
+        }
+
         // Get table and seats
         const { data: table } = await supabase
           .from("poker_tables")
