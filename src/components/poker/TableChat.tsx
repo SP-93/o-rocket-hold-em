@@ -138,7 +138,7 @@ export function TableChat({ messages, onSendMessage, currentWallet, className }:
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 text-sm"
+            className="flex-1 text-sm text-foreground placeholder:text-muted-foreground"
             maxLength={200}
           />
           <Button

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Rocket, Mail, Lock, User, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Rocket, Mail, Lock, User, Loader2, ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+
+// Password requirements
+const PASSWORD_REQUIREMENTS = {
+  minLength: 8,
+  hasUppercase: /[A-Z]/,
+  hasLowercase: /[a-z]/,
+  hasNumber: /[0-9]/,
+  hasSpecial: /[^A-Za-z0-9]/,
+};
 
 // Validation schemas
 const loginSchema = z.object({
@@ -22,8 +34,16 @@ const loginSchema = z.object({
 
 const signupSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  username: z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be at most 20 characters'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username must be at most 20 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+  password: z.string()
+    .min(PASSWORD_REQUIREMENTS.minLength, `Password must be at least ${PASSWORD_REQUIREMENTS.minLength} characters`)
+    .regex(PASSWORD_REQUIREMENTS.hasUppercase, 'Password must contain at least one uppercase letter')
+    .regex(PASSWORD_REQUIREMENTS.hasLowercase, 'Password must contain at least one lowercase letter')
+    .regex(PASSWORD_REQUIREMENTS.hasNumber, 'Password must contain at least one number')
+    .regex(PASSWORD_REQUIREMENTS.hasSpecial, 'Password must contain at least one special character'),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -40,6 +60,62 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 type AuthMode = 'login' | 'signup' | 'forgot-password';
 
+// Password strength indicator component
+function PasswordStrengthIndicator({ password }: { password: string }) {
+  const requirements = [
+    { label: 'At least 8 characters', met: password.length >= PASSWORD_REQUIREMENTS.minLength },
+    { label: 'Uppercase letter (A-Z)', met: PASSWORD_REQUIREMENTS.hasUppercase.test(password) },
+    { label: 'Lowercase letter (a-z)', met: PASSWORD_REQUIREMENTS.hasLowercase.test(password) },
+    { label: 'Number (0-9)', met: PASSWORD_REQUIREMENTS.hasNumber.test(password) },
+    { label: 'Special character (!@#$%^&*)', met: PASSWORD_REQUIREMENTS.hasSpecial.test(password) },
+  ];
+
+  const metCount = requirements.filter(r => r.met).length;
+  const strengthPercent = (metCount / requirements.length) * 100;
+
+  const getStrengthColor = () => {
+    if (metCount <= 2) return 'bg-destructive';
+    if (metCount <= 3) return 'bg-orange-500';
+    if (metCount <= 4) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+
+  if (!password) return null;
+
+  return (
+    <div className="space-y-2 mt-2">
+      {/* Strength bar */}
+      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+        <motion.div
+          className={cn("h-full rounded-full transition-colors", getStrengthColor())}
+          initial={{ width: 0 }}
+          animate={{ width: `${strengthPercent}%` }}
+          transition={{ duration: 0.3 }}
+        />
+      </div>
+      
+      {/* Requirements checklist */}
+      <div className="grid grid-cols-1 gap-1">
+        {requirements.map((req, idx) => (
+          <div key={idx} className="flex items-center gap-2 text-xs">
+            {req.met ? (
+              <Check className="h-3 w-3 text-green-500" />
+            ) : (
+              <X className="h-3 w-3 text-muted-foreground" />
+            )}
+            <span className={cn(
+              "transition-colors",
+              req.met ? "text-green-500" : "text-muted-foreground"
+            )}>
+              {req.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Auth() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -50,6 +126,7 @@ export default function Auth() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
 
   // Get the intended destination
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/lobby';
@@ -75,6 +152,52 @@ export default function Auth() {
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: '' },
   });
+
+  // Watch password for strength indicator
+  const watchedPassword = useWatch({ control: signupForm.control, name: 'password' });
+  const watchedUsername = useWatch({ control: signupForm.control, name: 'username' });
+
+  // Check username availability
+  const checkUsername = useCallback(async (username: string) => {
+    if (!username || username.length < 3) {
+      setUsernameStatus('idle');
+      return;
+    }
+
+    // Validate format first
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setUsernameStatus('idle');
+      return;
+    }
+
+    setUsernameStatus('checking');
+    
+    const { data, error } = await supabase
+      .from('player_profiles')
+      .select('username')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking username:', error);
+      setUsernameStatus('idle');
+      return;
+    }
+
+    setUsernameStatus(data ? 'taken' : 'available');
+  }, []);
+
+  // Debounced username check
+  const debouncedCheckUsername = useDebouncedCallback(checkUsername, 500);
+
+  // Watch username changes
+  useEffect(() => {
+    if (mode === 'signup' && watchedUsername) {
+      debouncedCheckUsername(watchedUsername);
+    } else {
+      setUsernameStatus('idle');
+    }
+  }, [watchedUsername, mode, debouncedCheckUsername]);
 
   const handleLogin = async (data: LoginFormData) => {
     setIsSubmitting(true);
@@ -104,6 +227,16 @@ export default function Auth() {
   };
 
   const handleSignup = async (data: SignupFormData) => {
+    // Check username one more time before submitting
+    if (usernameStatus === 'taken') {
+      toast({
+        variant: 'destructive',
+        title: 'Username taken',
+        description: 'Please choose a different username.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     const { error } = await signUp(data.email, data.password, data.username);
     setIsSubmitting(false);
@@ -112,6 +245,9 @@ export default function Auth() {
       let message = 'Failed to create account';
       if (error.message.includes('already registered')) {
         message = 'This email is already registered. Try signing in instead.';
+      } else if (error.message.includes('Username is already taken')) {
+        message = 'This username is already taken. Please choose another.';
+        setUsernameStatus('taken');
       }
       toast({
         variant: 'destructive',
@@ -281,12 +417,31 @@ export default function Auth() {
                         id="username"
                         type="text"
                         placeholder="PokerPro123"
-                        className="pl-10"
+                        className={cn(
+                          "pl-10 pr-10",
+                          usernameStatus === 'available' && "border-green-500 focus-visible:ring-green-500",
+                          usernameStatus === 'taken' && "border-destructive focus-visible:ring-destructive"
+                        )}
                         {...signupForm.register('username')}
                       />
+                      {usernameStatus === 'checking' && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                      {usernameStatus === 'available' && (
+                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                      )}
+                      {usernameStatus === 'taken' && (
+                        <X className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+                      )}
                     </div>
                     {signupForm.formState.errors.username && (
                       <p className="text-sm text-destructive">{signupForm.formState.errors.username.message}</p>
+                    )}
+                    {usernameStatus === 'taken' && !signupForm.formState.errors.username && (
+                      <p className="text-sm text-destructive">This username is already taken</p>
+                    )}
+                    {usernameStatus === 'available' && (
+                      <p className="text-sm text-green-500">Username is available!</p>
                     )}
                   </div>
 
@@ -309,9 +464,7 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    {signupForm.formState.errors.password && (
-                      <p className="text-sm text-destructive">{signupForm.formState.errors.password.message}</p>
-                    )}
+                    <PasswordStrengthIndicator password={watchedPassword || ''} />
                   </div>
 
                   <div className="space-y-2">
@@ -331,7 +484,11 @@ export default function Auth() {
                     )}
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isSubmitting || usernameStatus === 'taken' || usernameStatus === 'checking'}
+                  >
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Create Account
                   </Button>
