@@ -1,13 +1,30 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { WalletButton } from './WalletButton';
+import { Button } from './ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 import { useWalletContext } from '@/contexts/WalletContext';
-import { Rocket, Shield } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Rocket, Shield, User, Wallet, LogOut, ChevronDown } from 'lucide-react';
 
 export function Header() {
   const { t } = useTranslation();
-  const { isAdmin } = useWalletContext();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, signOut } = useAuth();
+  const { isAdmin, username } = useWalletContext();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-xl">
@@ -56,7 +73,52 @@ export function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
-          <WalletButton />
+          
+          {isAuthenticated ? (
+            <>
+              <WalletButton />
+              
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline max-w-24 truncate">
+                      {username || user?.email?.split('@')[0] || 'Player'}
+                    </span>
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{username || 'Player'}</span>
+                      <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/settings/wallets')}>
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Wallet Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/auth">Sign In</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link to="/auth">Sign Up</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>

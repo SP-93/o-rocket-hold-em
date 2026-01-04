@@ -30,18 +30,66 @@ function createShuffledDeck(): Card[] {
   return deck;
 }
 
+// Helper to extract user from JWT token
+async function getUserFromRequest(req: Request, supabase: any): Promise<{ user: any; error: string | null }> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { user: null, error: 'Missing or invalid authorization header' };
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  
+  if (error || !user) {
+    return { user: null, error: 'Invalid or expired token' };
+  }
+
+  return { user, error: null };
+}
+
+function errorResponse(message: string, status: number) {
+  return new Response(
+    JSON.stringify({ error: message }),
+    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+function successResponse(data: any) {
+  return new Response(
+    JSON.stringify(data),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    
+    // Use anon key for auth verification, service role for DB operations
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, tableId, seatNumber, walletAddress, amount } = await req.json();
+    const { action, tableId, seatNumber, amount } = await req.json();
+
+    // Actions that require authentication
+    const authRequiredActions = ['process_action', 'start_game'];
+    
+    let currentUser = null;
+    if (authRequiredActions.includes(action)) {
+      const { user, error } = await getUserFromRequest(req, supabaseAuth);
+      if (error) {
+        console.log(`[poker-game] Auth failed: ${error}`);
+        return errorResponse(error, 401);
+      }
+      currentUser = user;
+      console.log(`[poker-game] Authenticated user: ${currentUser.id}`);
+    }
 
     switch (action) {
       case "start_game": {
@@ -53,10 +101,7 @@ Deno.serve(async (req) => {
           .single();
 
         if (!table) {
-          return new Response(
-            JSON.stringify({ error: "Table not found" }),
-            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return errorResponse("Table not found", 404);
         }
 
         const { data: seats } = await supabase
@@ -67,10 +112,7 @@ Deno.serve(async (req) => {
           .order("seat_number");
 
         if (!seats || seats.length < 2) {
-          return new Response(
-            JSON.stringify({ error: "Need at least 2 players to start" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return errorResponse("Need at least 2 players to start", 400);
         }
 
         // Create and shuffle deck
@@ -147,10 +189,8 @@ Deno.serve(async (req) => {
           })
           .eq("id", tableId);
 
-        return new Response(
-          JSON.stringify({ success: true, message: "Game started" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        console.log(`[poker-game] Game started at table ${tableId}`);
+        return successResponse({ success: true, message: "Game started" });
       }
 
       case "deal_community": {
@@ -161,10 +201,7 @@ Deno.serve(async (req) => {
           .single();
 
         if (!table) {
-          return new Response(
-            JSON.stringify({ error: "Table not found" }),
-            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return errorResponse("Table not found", 404);
         }
 
         // Get all dealt cards to exclude
@@ -200,29 +237,22 @@ Deno.serve(async (req) => {
 
         let newPhase: string;
         let newCards: Card[];
-        let burnAndDeal: number;
 
         switch (table.current_phase) {
           case "preflop":
-            burnAndDeal = 4; // burn 1, deal 3
             newCards = [...existingCommunity, ...remainingDeck.slice(1, 4)];
             newPhase = "flop";
             break;
           case "flop":
-            burnAndDeal = 2; // burn 1, deal 1
             newCards = [...existingCommunity, remainingDeck[1]];
             newPhase = "turn";
             break;
           case "turn":
-            burnAndDeal = 2;
             newCards = [...existingCommunity, remainingDeck[1]];
             newPhase = "river";
             break;
           default:
-            return new Response(
-              JSON.stringify({ error: "Invalid phase for dealing" }),
-              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
+            return errorResponse("Invalid phase for dealing", 400);
         }
 
         // Reset bets for new round
@@ -266,32 +296,35 @@ Deno.serve(async (req) => {
             .eq("seat_number", nextActiveSeat);
         }
 
-        return new Response(
-          JSON.stringify({ success: true, phase: newPhase, communityCards: newCards }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        console.log(`[poker-game] Dealt ${newPhase} at table ${tableId}`);
+        return successResponse({ success: true, phase: newPhase, communityCards: newCards });
       }
 
       case "process_action": {
-        // Handle fold, check, call, raise, all-in
+        // CRITICAL SECURITY: Verify the user owns this seat
         const { data: table } = await supabase
           .from("poker_tables")
           .select("*")
           .eq("id", tableId)
           .single();
 
+        // SECURITY: Verify seat belongs to authenticated user
         const { data: seat } = await supabase
           .from("table_seats")
           .select("*")
           .eq("table_id", tableId)
           .eq("seat_number", seatNumber)
+          .eq("user_id", currentUser.id) // CRITICAL: Must match authenticated user
           .single();
 
         if (!table || !seat) {
-          return new Response(
-            JSON.stringify({ error: "Invalid table or seat" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          console.log(`[poker-game] SECURITY: User ${currentUser.id} attempted action on seat ${seatNumber} they don't own`);
+          return errorResponse("Invalid table or seat - you don't own this seat", 403);
+        }
+
+        // Verify it's actually this player's turn
+        if (!seat.is_turn) {
+          return errorResponse("Not your turn", 400);
         }
 
         const body = await req.clone().json();
@@ -302,12 +335,16 @@ Deno.serve(async (req) => {
         let newTableBet = table.current_bet;
         let isFolded = seat.is_folded;
 
+        // Validate action
         switch (playerAction) {
           case "fold":
             isFolded = true;
             break;
           case "check":
             // Valid only if current bet matches table bet
+            if (seat.current_bet < table.current_bet) {
+              return errorResponse("Cannot check - must call or raise", 400);
+            }
             break;
           case "call": {
             const toCall = table.current_bet - seat.current_bet;
@@ -319,7 +356,13 @@ Deno.serve(async (req) => {
           }
           case "raise": {
             const raiseTotal = amount || (table.current_bet + table.big_blind);
+            if (raiseTotal < table.current_bet + table.big_blind) {
+              return errorResponse("Raise must be at least big blind more than current bet", 400);
+            }
             const toAdd = raiseTotal - seat.current_bet;
+            if (toAdd > seat.chip_stack) {
+              return errorResponse("Not enough chips for this raise", 400);
+            }
             newChipStack -= toAdd;
             newCurrentBet = raiseTotal;
             newPot += toAdd;
@@ -336,7 +379,21 @@ Deno.serve(async (req) => {
             }
             break;
           }
+          default:
+            return errorResponse("Invalid action", 400);
         }
+
+        // Log action for audit
+        await supabase
+          .from("game_actions")
+          .insert({
+            table_id: tableId,
+            player_wallet: seat.player_wallet,
+            user_id: currentUser.id,
+            action: playerAction,
+            amount: playerAction === 'raise' ? amount : null,
+            phase: table.current_phase,
+          });
 
         // Update seat
         await supabase
@@ -395,10 +452,7 @@ Deno.serve(async (req) => {
             .eq("table_id", tableId);
 
           console.log(`[poker-game] Player ${winner.player_wallet} wins pot of ${newPot}`);
-          return new Response(
-            JSON.stringify({ success: true, winner: winner.player_wallet, pot: newPot }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return successResponse({ success: true, winner: winner.player_wallet, pot: newPot });
         }
 
         // Check if betting round is complete
@@ -473,10 +527,7 @@ Deno.serve(async (req) => {
               .eq("id", tableId);
 
             console.log(`[poker-game] Advanced to ${nextPhase}`);
-            return new Response(
-              JSON.stringify({ success: true, phase: nextPhase }),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
+            return successResponse({ success: true, phase: nextPhase });
           }
         }
 
@@ -501,19 +552,8 @@ Deno.serve(async (req) => {
           })
           .eq("id", tableId);
 
-        // Log action
-        await supabase.from("game_actions").insert({
-          table_id: tableId,
-          player_wallet: walletAddress,
-          action: playerAction,
-          amount: amount,
-          phase: table.current_phase,
-        });
-
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        console.log(`[poker-game] Action ${playerAction} by user ${currentUser.id}, next seat: ${nextSeat}`);
+        return successResponse({ success: true, nextSeat });
       }
 
       case "showdown": {
@@ -523,133 +563,34 @@ Deno.serve(async (req) => {
           .eq("id", tableId)
           .single();
 
+        if (!table) {
+          return errorResponse("Table not found", 404);
+        }
+
         const { data: activeSeats } = await supabase
           .from("table_seats")
           .select("*")
           .eq("table_id", tableId)
-          .eq("is_folded", false)
-          .order("seat_number");
+          .eq("is_folded", false);
 
-        if (!table || !activeSeats) {
-          return new Response(
-            JSON.stringify({ error: "Table not found" }),
-            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+        if (!activeSeats || activeSeats.length < 2) {
+          return errorResponse("Not enough players for showdown", 400);
         }
 
         return await handleShowdown(supabase, tableId, table.pot, activeSeats);
       }
 
       default:
-        return new Response(
-          JSON.stringify({ error: "Unknown action" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(`Unknown action: ${action}`, 400);
     }
   } catch (error: unknown) {
-    console.error("Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("[poker-game] Error:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return errorResponse(message, 500);
   }
 });
 
-// Hand evaluation helpers
-const RANK_VALUES: Record<string, number> = {
-  '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
-  '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14,
-};
-
-function evaluateHand(holeCards: Card[], communityCards: Card[]): { rank: number; value: number } {
-  const allCards = [...holeCards, ...communityCards];
-  
-  // Group by suit and rank
-  const bySuit: Record<string, Card[]> = {};
-  const byRank: Record<string, Card[]> = {};
-  
-  for (const card of allCards) {
-    if (!bySuit[card.suit]) bySuit[card.suit] = [];
-    if (!byRank[card.rank]) byRank[card.rank] = [];
-    bySuit[card.suit].push(card);
-    byRank[card.rank].push(card);
-  }
-
-  // Check for flush
-  let flush: Card[] | null = null;
-  for (const suit in bySuit) {
-    if (bySuit[suit].length >= 5) {
-      flush = bySuit[suit].sort((a, b) => RANK_VALUES[b.rank] - RANK_VALUES[a.rank]).slice(0, 5);
-    }
-  }
-
-  // Check for straight
-  const rankSet = new Set(allCards.map(c => RANK_VALUES[c.rank]));
-  let straight: number[] = [];
-  const sortedRanks = Array.from(rankSet).sort((a, b) => b - a);
-  
-  // Add low ace for wheel straight
-  if (rankSet.has(14)) sortedRanks.push(1);
-  
-  for (let i = 0; i <= sortedRanks.length - 5; i++) {
-    let consecutive = true;
-    for (let j = 0; j < 4; j++) {
-      if (sortedRanks[i + j] - sortedRanks[i + j + 1] !== 1) {
-        consecutive = false;
-        break;
-      }
-    }
-    if (consecutive) {
-      straight = sortedRanks.slice(i, i + 5);
-      break;
-    }
-  }
-
-  // Count groups
-  const groups = Object.values(byRank).map(cards => cards.length).sort((a, b) => b - a);
-  const groupedRanks = Object.entries(byRank)
-    .sort((a, b) => {
-      if (b[1].length !== a[1].length) return b[1].length - a[1].length;
-      return RANK_VALUES[b[0]] - RANK_VALUES[a[0]];
-    });
-
-  // Determine hand rank
-  if (flush && straight.length === 5) {
-    // Check if flush cards form straight
-    const flushRanks = flush.map(c => RANK_VALUES[c.rank]);
-    if (flushRanks[0] === 14 && flushRanks[1] === 13) {
-      return { rank: 9, value: 14 }; // Royal flush
-    }
-    return { rank: 8, value: flushRanks[0] }; // Straight flush
-  }
-  if (groups[0] === 4) {
-    return { rank: 7, value: RANK_VALUES[groupedRanks[0][0]] }; // Four of a kind
-  }
-  if (groups[0] === 3 && groups[1] >= 2) {
-    return { rank: 6, value: RANK_VALUES[groupedRanks[0][0]] * 100 + RANK_VALUES[groupedRanks[1][0]] }; // Full house
-  }
-  if (flush) {
-    return { rank: 5, value: RANK_VALUES[flush[0].rank] }; // Flush
-  }
-  if (straight.length === 5) {
-    return { rank: 4, value: straight[0] }; // Straight
-  }
-  if (groups[0] === 3) {
-    return { rank: 3, value: RANK_VALUES[groupedRanks[0][0]] }; // Three of a kind
-  }
-  if (groups[0] === 2 && groups[1] === 2) {
-    return { rank: 2, value: Math.max(RANK_VALUES[groupedRanks[0][0]], RANK_VALUES[groupedRanks[1][0]]) * 100 + Math.min(RANK_VALUES[groupedRanks[0][0]], RANK_VALUES[groupedRanks[1][0]]) }; // Two pair
-  }
-  if (groups[0] === 2) {
-    return { rank: 1, value: RANK_VALUES[groupedRanks[0][0]] }; // Pair
-  }
-  
-  // High card
-  const highCards = sortedRanks.slice(0, 5);
-  return { rank: 0, value: highCards[0] };
-}
-
+// Hand evaluation and showdown logic
 async function handleShowdown(supabase: any, tableId: string, pot: number, activeSeats: any[]) {
   const { data: table } = await supabase
     .from("poker_tables")
@@ -657,36 +598,37 @@ async function handleShowdown(supabase: any, tableId: string, pot: number, activ
     .eq("id", tableId)
     .single();
 
-  const communityCards = (table?.community_cards || []) as Card[];
-  
+  const communityCards = (table?.community_cards as Card[]) || [];
+
   // Evaluate each player's hand
   const playerHands = activeSeats.map(seat => {
-    const holeCards = (seat.cards || []) as Card[];
-    const hand = evaluateHand(holeCards, communityCards);
-    return { seat, hand };
+    const holeCards = (seat.cards as Card[]) || [];
+    const allCards = [...holeCards, ...communityCards];
+    const handRank = evaluateHand(allCards);
+    return {
+      seat,
+      handRank,
+    };
   });
 
-  // Find best hand
-  playerHands.sort((a, b) => {
-    if (b.hand.rank !== a.hand.rank) return b.hand.rank - a.hand.rank;
-    return b.hand.value - a.hand.value;
-  });
+  // Sort by hand strength (higher is better)
+  playerHands.sort((a, b) => b.handRank.value - a.handRank.value);
 
-  const bestHand = playerHands[0].hand;
-  const winners = playerHands.filter(p => p.hand.rank === bestHand.rank && p.hand.value === bestHand.value);
-  const potShare = Math.floor(pot / winners.length);
+  // Find winners (could be tie)
+  const bestValue = playerHands[0].handRank.value;
+  const winners = playerHands.filter(p => p.handRank.value === bestValue);
 
-  // Award pot to winner(s)
+  // Split pot among winners
+  const potPerWinner = Math.floor(pot / winners.length);
+  
   for (const winner of winners) {
     await supabase
       .from("table_seats")
-      .update({ chip_stack: winner.seat.chip_stack + potShare })
+      .update({ chip_stack: winner.seat.chip_stack + potPerWinner })
       .eq("id", winner.seat.id);
   }
 
-  console.log(`[poker-game] Showdown winners: ${winners.map(w => w.seat.player_wallet).join(', ')}, pot: ${pot}`);
-
-  // Reset table for next hand
+  // Reset table
   await supabase
     .from("poker_tables")
     .update({
@@ -713,14 +655,95 @@ async function handleShowdown(supabase: any, tableId: string, pot: number, activ
     })
     .eq("table_id", tableId);
 
+  const winnerNames = winners.map(w => w.seat.player_name || w.seat.player_wallet);
+  console.log(`[poker-game] Showdown: ${winnerNames.join(', ')} win ${potPerWinner} each`);
+
   return new Response(
-    JSON.stringify({ 
-      success: true, 
-      showdown: true,
-      winners: winners.map(w => w.seat.player_wallet),
-      potShare,
-      handRank: bestHand.rank,
+    JSON.stringify({
+      success: true,
+      winners: winners.map(w => ({
+        wallet: w.seat.player_wallet,
+        name: w.seat.player_name,
+        hand: w.handRank.name,
+        winnings: potPerWinner,
+      })),
+      pot,
     }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    { headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" } }
   );
+}
+
+// Simple hand evaluator
+function evaluateHand(cards: Card[]): { name: string; value: number } {
+  const rankValues: Record<string, number> = {
+    '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
+    '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14,
+  };
+
+  const ranks = cards.map(c => rankValues[c.rank]).sort((a, b) => b - a);
+  const suits = cards.map(c => c.suit);
+
+  // Count ranks and suits
+  const rankCounts: Record<number, number> = {};
+  const suitCounts: Record<string, number> = {};
+
+  for (const rank of ranks) {
+    rankCounts[rank] = (rankCounts[rank] || 0) + 1;
+  }
+  for (const suit of suits) {
+    suitCounts[suit] = (suitCounts[suit] || 0) + 1;
+  }
+
+  const counts = Object.values(rankCounts).sort((a, b) => b - a);
+  const isFlush = Object.values(suitCounts).some(c => c >= 5);
+  
+  // Check for straight
+  const uniqueRanks = [...new Set(ranks)].sort((a, b) => b - a);
+  let isStraight = false;
+  let straightHigh = 0;
+
+  for (let i = 0; i <= uniqueRanks.length - 5; i++) {
+    if (uniqueRanks[i] - uniqueRanks[i + 4] === 4) {
+      isStraight = true;
+      straightHigh = uniqueRanks[i];
+      break;
+    }
+  }
+  
+  // Ace-low straight (A-2-3-4-5)
+  if (!isStraight && uniqueRanks.includes(14) && uniqueRanks.includes(5) && 
+      uniqueRanks.includes(4) && uniqueRanks.includes(3) && uniqueRanks.includes(2)) {
+    isStraight = true;
+    straightHigh = 5;
+  }
+
+  // Determine hand rank
+  if (isFlush && isStraight && straightHigh === 14) {
+    return { name: 'Royal Flush', value: 10000 };
+  }
+  if (isFlush && isStraight) {
+    return { name: 'Straight Flush', value: 9000 + straightHigh };
+  }
+  if (counts[0] === 4) {
+    return { name: 'Four of a Kind', value: 8000 + ranks[0] };
+  }
+  if (counts[0] === 3 && counts[1] === 2) {
+    return { name: 'Full House', value: 7000 + ranks[0] };
+  }
+  if (isFlush) {
+    return { name: 'Flush', value: 6000 + ranks[0] };
+  }
+  if (isStraight) {
+    return { name: 'Straight', value: 5000 + straightHigh };
+  }
+  if (counts[0] === 3) {
+    return { name: 'Three of a Kind', value: 4000 + ranks[0] };
+  }
+  if (counts[0] === 2 && counts[1] === 2) {
+    return { name: 'Two Pair', value: 3000 + Math.max(...ranks.filter((r, i) => rankCounts[r] === 2)) };
+  }
+  if (counts[0] === 2) {
+    return { name: 'One Pair', value: 2000 + ranks.find(r => rankCounts[r] === 2)! };
+  }
+  return { name: 'High Card', value: 1000 + ranks[0] };
 }

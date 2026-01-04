@@ -15,6 +15,7 @@ const ADMIN_WALLET_ADDRESS = '0x8334966329b7f4b459633696A8CA59118253bC89';
 interface ActionRequest {
   action: 'get_balance' | 'verify_deposit' | 'join_table' | 'leave_table' | 'process_settlement' | 'sync_balance' | 'request_payout' | 'admin_process_payout';
   wallet_address?: string;
+  user_id?: string;
   table_id?: string;
   chip_amount?: number;
   tx_hash?: string;
@@ -22,8 +23,25 @@ interface ActionRequest {
   wover_amount?: number;
   event_type?: 'deposit' | 'withdrawal';
   settlement_data?: {
-    players: { wallet: string; final_chips: number }[];
+    players: { wallet: string; user_id: string; final_chips: number }[];
   };
+}
+
+// Helper to extract user from JWT token
+async function getUserFromRequest(req: Request, supabase: any): Promise<{ user: any; error: string | null }> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { user: null, error: 'Missing or invalid authorization header' };
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  
+  if (error || !user) {
+    return { user: null, error: 'Invalid or expired token' };
+  }
+
+  return { user, error: null };
 }
 
 serve(async (req) => {
@@ -35,8 +53,10 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    // Use service role for backend operations
+    // Use anon key for auth verification, service role for DB operations
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const body: ActionRequest = await req.json();
@@ -44,35 +64,76 @@ serve(async (req) => {
 
     console.log(`[chip-manager] Action: ${action}, Wallet: ${wallet_address}`);
 
+    // Actions that require authentication
+    const authRequiredActions = ['join_table', 'leave_table', 'request_payout'];
+    
+    let currentUser = null;
+    if (authRequiredActions.includes(action)) {
+      const { user, error } = await getUserFromRequest(req, supabaseAuth);
+      if (error) {
+        console.log(`[chip-manager] Auth failed for ${action}: ${error}`);
+        return errorResponse(error, 401);
+      }
+      currentUser = user;
+      console.log(`[chip-manager] Authenticated user: ${currentUser.id} for action: ${action}`);
+    }
+
     switch (action) {
       case 'get_balance': {
-        if (!wallet_address) {
-          return errorResponse('wallet_address required', 400);
+        // Can be called with wallet_address OR user_id (from auth)
+        let userId = body.user_id;
+        
+        // Try to get user from auth header if not provided
+        if (!userId) {
+          const { user } = await getUserFromRequest(req, supabaseAuth);
+          userId = user?.id;
         }
 
-        // Get or create player balance
-        let { data: balance, error } = await supabase
-          .from('player_balances')
-          .select('*')
-          .eq('wallet_address', wallet_address.toLowerCase())
-          .single();
+        if (!userId && !wallet_address) {
+          return errorResponse('user_id or wallet_address required', 400);
+        }
 
-        if (error && error.code === 'PGRST116') {
-          // Create new balance record
-          const { data: newBalance, error: insertError } = await supabase
+        // Get balance by user_id first, fallback to wallet_address
+        let balance;
+        if (userId) {
+          const { data, error } = await supabase
             .from('player_balances')
-            .insert({ wallet_address: wallet_address.toLowerCase() })
-            .select()
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+          
+          if (!error) {
+            balance = data;
+          }
+        }
+        
+        // Fallback to wallet address (for backwards compatibility)
+        if (!balance && wallet_address) {
+          const { data, error } = await supabase
+            .from('player_balances')
+            .select('*')
+            .eq('wallet_address', wallet_address.toLowerCase())
             .single();
 
-          if (insertError) {
-            console.error('[chip-manager] Insert error:', insertError);
-            return errorResponse('Failed to create balance', 500);
+          if (error && error.code === 'PGRST116') {
+            // Create new balance record
+            const { data: newBalance, error: insertError } = await supabase
+              .from('player_balances')
+              .insert({ wallet_address: wallet_address.toLowerCase() })
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error('[chip-manager] Insert error:', insertError);
+              return errorResponse('Failed to create balance', 500);
+            }
+            balance = newBalance;
+          } else if (error) {
+            console.error('[chip-manager] Get balance error:', error);
+            return errorResponse('Failed to get balance', 500);
+          } else {
+            balance = data;
           }
-          balance = newBalance;
-        } else if (error) {
-          console.error('[chip-manager] Get balance error:', error);
-          return errorResponse('Failed to get balance', 500);
         }
 
         return successResponse({ balance });
@@ -119,11 +180,21 @@ serve(async (req) => {
           return errorResponse('Failed to record event', 500);
         }
 
-        // Update player balance
+        // Find user by wallet address
+        const { data: userWallet } = await supabase
+          .from('user_wallets')
+          .select('user_id')
+          .eq('wallet_address', wallet_address.toLowerCase())
+          .single();
+
+        // Update player balance by user_id if found, otherwise by wallet_address
+        const filterColumn = userWallet?.user_id ? 'user_id' : 'wallet_address';
+        const filterValue = userWallet?.user_id || wallet_address.toLowerCase();
+
         const { data: currentBalance } = await supabase
           .from('player_balances')
           .select('*')
-          .eq('wallet_address', wallet_address.toLowerCase())
+          .eq(filterColumn, filterValue)
           .single();
 
         if (currentBalance) {
@@ -146,7 +217,7 @@ serve(async (req) => {
           const { error: updateError } = await supabase
             .from('player_balances')
             .update(updates)
-            .eq('wallet_address', wallet_address.toLowerCase());
+            .eq(filterColumn, filterValue);
 
           if (updateError) {
             console.error('[chip-manager] Balance update error:', updateError);
@@ -158,6 +229,7 @@ serve(async (req) => {
             .from('player_balances')
             .insert({
               wallet_address: wallet_address.toLowerCase(),
+              user_id: userWallet?.user_id || null,
               on_chain_chips: chips_granted,
               available_chips: event_type === 'deposit' ? chips_granted : 0,
               total_deposited_wover: event_type === 'deposit' ? wover_amount : 0,
@@ -176,45 +248,30 @@ serve(async (req) => {
       }
 
       case 'join_table': {
-        // Support both naming conventions: chip_amount or amount, table_id or tableId
+        // SECURITY: Use authenticated user's ID
         const table_id = body.table_id || (body as any).tableId;
         const chip_amount = body.chip_amount || (body as any).amount;
-        const normalizedWallet = (wallet_address || (body as any).walletAddress || '').toLowerCase();
 
-        console.log(`[chip-manager] join_table request:`, { table_id, chip_amount, wallet: normalizedWallet });
+        console.log(`[chip-manager] join_table request:`, { table_id, chip_amount, user_id: currentUser.id });
 
-        if (!normalizedWallet || !table_id || !chip_amount) {
-          return errorResponse('Missing required fields for join_table (walletAddress, tableId, amount)', 400);
+        if (!table_id || !chip_amount) {
+          return errorResponse('Missing required fields for join_table (tableId, amount)', 400);
         }
 
-        // Get or create player balance
-        let { data: balance, error: balanceError } = await supabase
+        // Get player balance by user_id
+        const { data: balance, error: balanceError } = await supabase
           .from('player_balances')
           .select('*')
-          .eq('wallet_address', normalizedWallet)
+          .eq('user_id', currentUser.id)
           .single();
 
-        if (balanceError && balanceError.code === 'PGRST116') {
-          // Create new balance record with 0 chips
-          const { data: newBalance, error: insertError } = await supabase
-            .from('player_balances')
-            .insert({ wallet_address: normalizedWallet })
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error('[chip-manager] Insert error:', insertError);
-            return errorResponse('Failed to create balance', 500);
-          }
-          balance = newBalance;
-        } else if (balanceError) {
-          console.error('[chip-manager] Balance error:', balanceError);
-          return errorResponse('Player balance not found', 404);
+        if (balanceError || !balance) {
+          console.error('[chip-manager] Balance not found for user:', currentUser.id);
+          return errorResponse('Player balance not found. Please buy chips first.', 404);
         }
 
-        if (!balance || balance.available_chips < chip_amount) {
-          const available = balance?.available_chips || 0;
-          return errorResponse(`Insufficient chips. Available: ${available}, Required: ${chip_amount}. Please buy chips first.`, 400);
+        if (balance.available_chips < chip_amount) {
+          return errorResponse(`Insufficient chips. Available: ${balance.available_chips}, Required: ${chip_amount}. Please buy chips first.`, 400);
         }
 
         // Lock chips (move from available to locked)
@@ -224,14 +281,14 @@ serve(async (req) => {
             available_chips: balance.available_chips - chip_amount,
             locked_in_games: balance.locked_in_games + chip_amount,
           })
-          .eq('wallet_address', normalizedWallet);
+          .eq('user_id', currentUser.id);
 
         if (updateError) {
           console.error('[chip-manager] Lock chips error:', updateError);
           return errorResponse('Failed to lock chips', 500);
         }
 
-        console.log(`[chip-manager] Locked ${chip_amount} chips for ${normalizedWallet} at table ${table_id}`);
+        console.log(`[chip-manager] Locked ${chip_amount} chips for user ${currentUser.id} at table ${table_id}`);
         return successResponse({ 
           success: true, 
           locked_chips: chip_amount,
@@ -242,15 +299,15 @@ serve(async (req) => {
       case 'leave_table': {
         const { table_id, chip_amount } = body;
 
-        if (!wallet_address || !table_id || chip_amount === undefined) {
+        if (!table_id || chip_amount === undefined) {
           return errorResponse('Missing required fields for leave_table', 400);
         }
 
-        // Get current balance
+        // Get balance by user_id
         const { data: balance, error: balanceError } = await supabase
           .from('player_balances')
           .select('*')
-          .eq('wallet_address', wallet_address.toLowerCase())
+          .eq('user_id', currentUser.id)
           .single();
 
         if (balanceError || !balance) {
@@ -262,7 +319,7 @@ serve(async (req) => {
           .from('table_seats')
           .select('on_chain_buy_in')
           .eq('table_id', table_id)
-          .eq('player_wallet', wallet_address.toLowerCase())
+          .eq('user_id', currentUser.id)
           .single();
 
         const originalBuyIn = seat?.on_chain_buy_in || chip_amount;
@@ -277,14 +334,14 @@ serve(async (req) => {
             locked_in_games: Math.max(0, balance.locked_in_games - originalBuyIn),
             on_chain_chips: balance.on_chain_chips + chipDifference,
           })
-          .eq('wallet_address', wallet_address.toLowerCase());
+          .eq('user_id', currentUser.id);
 
         if (updateError) {
           console.error('[chip-manager] Unlock chips error:', updateError);
           return errorResponse('Failed to unlock chips', 500);
         }
 
-        console.log(`[chip-manager] Unlocked ${chip_amount} chips for ${wallet_address} (original: ${originalBuyIn})`);
+        console.log(`[chip-manager] Unlocked ${chip_amount} chips for user ${currentUser.id} (original: ${originalBuyIn})`);
         return successResponse({ 
           success: true, 
           final_chips: chip_amount,
@@ -303,20 +360,23 @@ serve(async (req) => {
 
         // Process each player's final chips
         for (const player of settlement_data.players) {
-          const { wallet, final_chips } = player;
+          const { wallet, user_id, final_chips } = player;
           
-          // Get current balance and original buy-in
+          // Prefer user_id, fallback to wallet
+          const filterColumn = user_id ? 'user_id' : 'wallet_address';
+          const filterValue = user_id || wallet.toLowerCase();
+
           const { data: balance } = await supabase
             .from('player_balances')
             .select('*')
-            .eq('wallet_address', wallet.toLowerCase())
+            .eq(filterColumn, filterValue)
             .single();
 
           const { data: seat } = await supabase
             .from('table_seats')
             .select('on_chain_buy_in, chip_stack')
             .eq('table_id', table_id)
-            .eq('player_wallet', wallet.toLowerCase())
+            .eq(user_id ? 'user_id' : 'player_wallet', filterValue)
             .single();
 
           if (balance && seat) {
@@ -330,9 +390,9 @@ serve(async (req) => {
                 locked_in_games: Math.max(0, balance.locked_in_games - originalBuyIn),
                 on_chain_chips: balance.on_chain_chips + chipDifference,
               })
-              .eq('wallet_address', wallet.toLowerCase());
+              .eq(filterColumn, filterValue);
 
-            console.log(`[chip-manager] Settled ${wallet}: ${final_chips} chips (profit: ${chipDifference})`);
+            console.log(`[chip-manager] Settled ${user_id || wallet}: ${final_chips} chips (profit: ${chipDifference})`);
           }
         }
 
@@ -352,12 +412,16 @@ serve(async (req) => {
           return errorResponse('wallet_address required', 400);
         }
 
-        // This would be called with on-chain data to sync
-        // For now, just return current balance
+        // Get balance, prefer by user if authenticated
+        const { user } = await getUserFromRequest(req, supabaseAuth);
+        
+        const filterColumn = user?.id ? 'user_id' : 'wallet_address';
+        const filterValue = user?.id || wallet_address.toLowerCase();
+
         const { data: balance } = await supabase
           .from('player_balances')
           .select('*')
-          .eq('wallet_address', wallet_address.toLowerCase())
+          .eq(filterColumn, filterValue)
           .single();
 
         return successResponse({ balance, synced: true });
@@ -366,15 +430,15 @@ serve(async (req) => {
       case 'request_payout': {
         const { chip_amount } = body;
 
-        if (!wallet_address || !chip_amount || chip_amount <= 0) {
-          return errorResponse('wallet_address and valid chip_amount required', 400);
+        if (!chip_amount || chip_amount <= 0) {
+          return errorResponse('Valid chip_amount required', 400);
         }
 
-        // Get current balance
+        // Get balance by user_id
         const { data: balance, error: balanceError } = await supabase
           .from('player_balances')
           .select('*')
-          .eq('wallet_address', wallet_address.toLowerCase())
+          .eq('user_id', currentUser.id)
           .single();
 
         if (balanceError || !balance) {
@@ -385,7 +449,19 @@ serve(async (req) => {
           return errorResponse(`Insufficient chips. Available: ${balance.available_chips}, Requested: ${chip_amount}`, 400);
         }
 
-        // 1 CHIP = 1 WOVER (direct 1:1 conversion)
+        // Get user's primary wallet for payout
+        const { data: primaryWallet } = await supabase
+          .from('user_wallets')
+          .select('wallet_address')
+          .eq('user_id', currentUser.id)
+          .eq('is_primary', true)
+          .single();
+
+        if (!primaryWallet) {
+          return errorResponse('No primary wallet configured. Please link a wallet first.', 400);
+        }
+
+        // 1 CHIP = 1 WOVER
         const wover_amount = chip_amount / CHIPS_PER_WOVER;
 
         // Deduct chips from balance
@@ -395,7 +471,7 @@ serve(async (req) => {
             available_chips: balance.available_chips - chip_amount,
             on_chain_chips: balance.on_chain_chips - chip_amount,
           })
-          .eq('wallet_address', wallet_address.toLowerCase());
+          .eq('user_id', currentUser.id);
 
         if (updateError) {
           console.error('[chip-manager] Payout deduction error:', updateError);
@@ -406,8 +482,8 @@ serve(async (req) => {
         const { error: eventError } = await supabase
           .from('deposit_events')
           .insert({
-            wallet_address: wallet_address.toLowerCase(),
-            tx_hash: `pending_${Date.now()}_${wallet_address.slice(0, 8)}`,
+            wallet_address: primaryWallet.wallet_address,
+            tx_hash: `pending_${Date.now()}_${currentUser.id.slice(0, 8)}`,
             block_number: 0,
             wover_amount,
             chips_granted: chip_amount,
@@ -424,15 +500,16 @@ serve(async (req) => {
               available_chips: balance.available_chips,
               on_chain_chips: balance.on_chain_chips,
             })
-            .eq('wallet_address', wallet_address.toLowerCase());
+            .eq('user_id', currentUser.id);
           return errorResponse('Failed to record payout request', 500);
         }
 
-        console.log(`[chip-manager] Payout requested: ${chip_amount} chips = ${wover_amount} WOVER for ${wallet_address}`);
+        console.log(`[chip-manager] Payout requested: ${chip_amount} chips = ${wover_amount} WOVER for user ${currentUser.id} to wallet ${primaryWallet.wallet_address}`);
         return successResponse({ 
           success: true, 
           chips_deducted: chip_amount,
           wover_pending: wover_amount,
+          payout_wallet: primaryWallet.wallet_address,
           message: 'Payout request submitted. Admin will process your withdrawal.',
         });
       }
@@ -476,14 +553,14 @@ serve(async (req) => {
 
 function successResponse(data: any) {
   return new Response(JSON.stringify(data), {
-    status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200,
   });
 }
 
 function errorResponse(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
-    status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status,
   });
 }

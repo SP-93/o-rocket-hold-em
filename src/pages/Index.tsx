@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
-import { useWalletContext } from '@/contexts/WalletContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { PokerCardSVG } from '@/components/poker/PokerCardSVG';
 import { PokerChip } from '@/components/poker/PokerChip';
 import { Rocket, Coins, Users, Shield, ChevronRight, Sparkles } from 'lucide-react';
-
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0 },
@@ -32,8 +31,7 @@ const floatAnimation = {
 
 export default function Index() {
   const { t } = useTranslation();
-  const { isConnected, openConnectModal } = useWalletContext();
-
+  const { isAuthenticated } = useAuth();
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <Header />
@@ -151,7 +149,7 @@ export default function Index() {
               variants={fadeInUp}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              {isConnected ? (
+              {isAuthenticated ? (
                 <Button 
                   asChild 
                   size="lg" 
@@ -164,12 +162,14 @@ export default function Index() {
                 </Button>
               ) : (
                 <Button 
-                  onClick={openConnectModal} 
+                  asChild
                   size="lg" 
                   className="h-14 px-10 text-lg gap-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/30"
                 >
-                  {t('wallet.connect')}
-                  <ChevronRight className="h-5 w-5" />
+                  <Link to="/auth">
+                    Get Started
+                    <ChevronRight className="h-5 w-5" />
+                  </Link>
                 </Button>
               )}
               <Button 
