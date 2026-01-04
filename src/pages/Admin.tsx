@@ -23,11 +23,17 @@ import {
   RefreshCw,
   Trash2,
   AlertTriangle,
-  Wallet
+  Wallet,
+  Crown,
+  Lock,
+  Copy,
+  ExternalLink,
+  FileCode
 } from 'lucide-react';
 import { TournamentManager } from '@/components/admin/TournamentManager';
 import { UserManager } from '@/components/admin/UserManager';
 import { PayoutManager } from '@/components/admin/PayoutManager';
+import { useAdminOperations, MASTER_ADMIN_WALLET } from '@/hooks/useAdminOperations';
 
 interface TableData {
   id: string;
@@ -50,6 +56,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { address, isConnected, isAdmin } = useWalletContext();
+  const { isMasterAdmin, isLoading: isOperationLoading, updateConfig } = useAdminOperations(address);
   const [profileLoading, setProfileLoading] = useState(true);
   
   // Initial load delay to let WalletContext sync
@@ -169,31 +176,26 @@ export default function Admin() {
     }
   };
 
-  // Update config
-  const handleUpdateConfig = async (configId: string) => {
+  // Update config - uses secure edge function
+  const handleUpdateConfigSecure = async (configId: string) => {
     try {
       const parsedValue = JSON.parse(configValue);
       
-      const { error } = await supabase
-        .from('platform_config')
-        .update({ 
-          value: parsedValue,
-          updated_by: address?.toLowerCase(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', configId);
-
-      if (error) {
-        console.error('Error updating config:', error);
-        toast.error('Failed to update config');
-      } else {
-        toast.success('Config updated!');
+      const result = await updateConfig(configId, parsedValue);
+      
+      if (result.success) {
         setEditingConfig(null);
         fetchConfigs();
       }
     } catch {
       toast.error('Invalid JSON format');
     }
+  };
+
+  // Copy to clipboard helper
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
   };
 
   if (profileLoading) {
@@ -375,9 +377,35 @@ export default function Admin() {
 
           {/* Config Tab */}
           <TabsContent value="config" className="space-y-6">
+            {/* Security Notice for non-master admins */}
+            {!isMasterAdmin && (
+              <Card className="border-amber-500/30 bg-amber-500/5">
+                <CardContent className="pt-4">
+                  <div className="flex items-start gap-3">
+                    <Lock className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-500">Read-Only Access</p>
+                      <p className="text-sm text-muted-foreground">
+                        Only the Master Admin wallet can modify platform configuration. 
+                        You can view but not edit these settings.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <Card className="border-border/50 bg-card/50">
               <CardHeader>
-                <CardTitle className="text-lg">Platform Configuration</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Platform Configuration
+                  {isMasterAdmin && (
+                    <Badge className="bg-amber-500/20 text-amber-400 text-xs ml-2">
+                      <Crown className="h-3 w-3 mr-1" />
+                      Editable
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>Token addresses, fees, and platform settings</CardDescription>
               </CardHeader>
               <CardContent>
@@ -406,8 +434,8 @@ export default function Admin() {
                               className="w-full h-32 p-2 rounded bg-background border border-border font-mono text-xs"
                             />
                             <div className="flex gap-2">
-                              <Button size="sm" onClick={() => handleUpdateConfig(config.id)}>
-                                Save
+                              <Button size="sm" onClick={() => handleUpdateConfigSecure(config.id)} disabled={isOperationLoading}>
+                                {isOperationLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
                               </Button>
                               <Button size="sm" variant="outline" onClick={() => setEditingConfig(null)}>
                                 Cancel
@@ -419,17 +447,19 @@ export default function Admin() {
                             <pre className="text-xs bg-muted/30 p-2 rounded overflow-auto max-h-32">
                               {JSON.stringify(config.value, null, 2)}
                             </pre>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="mt-2"
-                              onClick={() => {
-                                setEditingConfig(config.id);
-                                setConfigValue(JSON.stringify(config.value, null, 2));
-                              }}
-                            >
-                              Edit
-                            </Button>
+                            {isMasterAdmin && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mt-2"
+                                onClick={() => {
+                                  setEditingConfig(config.id);
+                                  setConfigValue(JSON.stringify(config.value, null, 2));
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -460,7 +490,7 @@ export default function Admin() {
             <Card className="border-border/50 bg-card/50">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
+                  <FileCode className="h-5 w-5 text-primary" />
                   Smart Contract Deployment
                 </CardTitle>
                 <CardDescription>Deploy and manage PokerChipManager contract on Over Protocol</CardDescription>
@@ -478,53 +508,162 @@ export default function Admin() {
                       <span className="text-muted-foreground">Contract Status:</span>
                       <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400">Pending Deploy</Badge>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Admin Wallet:</span>
-                      <span className="text-foreground font-mono text-xs">0x8334966329b7f4b459633696A8CA59118253bC89</span>
+                      <div className="flex items-center gap-2">
+                        <code className="text-foreground font-mono text-xs">
+                          {MASTER_ADMIN_WALLET.slice(0, 10)}...{MASTER_ADMIN_WALLET.slice(-8)}
+                        </code>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6"
+                          onClick={() => copyToClipboard(MASTER_ADMIN_WALLET, 'Admin wallet')}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Token Addresses */}
+                {/* Token Addresses with Copy */}
                 <div className="p-4 rounded-lg bg-background/50 border border-border/30">
-                  <h4 className="font-semibold text-foreground mb-3">Token Addresses</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">WOVER (Chips):</span>
-                      <code className="text-xs bg-muted/30 px-2 py-1 rounded">0x59c914C8ac6F212bb655737CC80d9Abc79A1e273</code>
+                  <h4 className="font-semibold text-foreground mb-3">Token Addresses (Constructor Parameters)</h4>
+                  <div className="space-y-3 text-sm">
+                    {[
+                      { label: 'WOVER Token (_woverToken)', address: '0x59c914C8ac6F212bb655737CC80d9Abc79A1e273' },
+                    ].map(({ label, address: addr }) => (
+                      <div key={label} className="flex justify-between items-center">
+                        <span className="text-muted-foreground">{label}:</span>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs bg-muted/30 px-2 py-1 rounded font-mono">{addr}</code>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => copyToClipboard(addr, label)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Step-by-Step Deployment Guide */}
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Step-by-Step Deployment Guide
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    {/* Step 1 */}
+                    <div className="p-3 rounded bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-primary/20 text-primary">Step 1</Badge>
+                        <span className="font-semibold">Open Remix IDE</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Go to <a href="https://remix.ethereum.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                          remix.ethereum.org <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">USDT (Fees):</span>
-                      <code className="text-xs bg-muted/30 px-2 py-1 rounded">0xA510432E4aa60B4acd476fb850EC84B7EE226b2d</code>
+
+                    {/* Step 2 */}
+                    <div className="p-3 rounded bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-primary/20 text-primary">Step 2</Badge>
+                        <span className="font-semibold">Create Contract File</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        In Remix, create a new file <code className="bg-muted/30 px-1 rounded">PokerChipManager.sol</code>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Copy the contract code from: <code className="bg-muted/30 px-1 rounded">docs/contracts/PokerChipManager.sol</code>
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">USDC (Fees):</span>
-                      <code className="text-xs bg-muted/30 px-2 py-1 rounded">0x8712796136Ac8e0EEeC123251ef93702f265aa80</code>
+
+                    {/* Step 3 */}
+                    <div className="p-3 rounded bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-primary/20 text-primary">Step 3</Badge>
+                        <span className="font-semibold">Compile Contract</span>
+                      </div>
+                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                        <li>Go to "Solidity Compiler" tab (left sidebar)</li>
+                        <li>Select compiler version: <code className="bg-muted/30 px-1 rounded">0.8.19</code> or higher</li>
+                        <li>Enable optimization (200 runs)</li>
+                        <li>Click "Compile PokerChipManager.sol"</li>
+                      </ul>
+                    </div>
+
+                    {/* Step 4 */}
+                    <div className="p-3 rounded bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-primary/20 text-primary">Step 4</Badge>
+                        <span className="font-semibold">Connect MetaMask to Over Protocol</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                        <p>Add Over Protocol network to MetaMask:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-2">
+                          <li>Network Name: <code className="bg-muted/30 px-1 rounded">Over Protocol</code></li>
+                          <li>RPC URL: <code className="bg-muted/30 px-1 rounded">https://rpc.overprotocol.com/</code></li>
+                          <li>Chain ID: <code className="bg-muted/30 px-1 rounded">54176</code></li>
+                          <li>Currency Symbol: <code className="bg-muted/30 px-1 rounded">OVER</code></li>
+                          <li>Explorer: <code className="bg-muted/30 px-1 rounded">https://explorer.overprotocol.com/</code></li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Step 5 */}
+                    <div className="p-3 rounded bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-primary/20 text-primary">Step 5</Badge>
+                        <span className="font-semibold">Deploy Contract</span>
+                      </div>
+                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                        <li>Go to "Deploy & Run" tab in Remix</li>
+                        <li>Environment: <code className="bg-muted/30 px-1 rounded">Injected Provider - MetaMask</code></li>
+                        <li>Select <code className="bg-muted/30 px-1 rounded">PokerChipManager</code> contract</li>
+                        <li>Enter constructor parameter:
+                          <ul className="list-none ml-4 mt-1">
+                            <li className="flex items-center gap-2">
+                              _woverToken: <code className="bg-muted/30 px-1 rounded text-xs">0x59c914C8ac6F212bb655737CC80d9Abc79A1e273</code>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-5 w-5"
+                                onClick={() => copyToClipboard('0x59c914C8ac6F212bb655737CC80d9Abc79A1e273', 'WOVER address')}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </li>
+                          </ul>
+                        </li>
+                        <li>Click "Deploy" and confirm in MetaMask</li>
+                      </ul>
+                    </div>
+
+                    {/* Step 6 */}
+                    <div className="p-3 rounded bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-primary/20 text-primary">Step 6</Badge>
+                        <span className="font-semibold">After Deployment</span>
+                      </div>
+                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                        <li>Copy the deployed contract address from Remix</li>
+                        <li>Send me the contract address in chat</li>
+                        <li>I will update the platform code with the new address</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
 
-                {/* Deployment Instructions */}
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                  <h4 className="font-semibold text-foreground mb-3">📋 Deployment Instructions</h4>
-                  <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                    <li>Open <code className="bg-muted/30 px-1 rounded">docs/contracts/PokerChipManager.sol</code> in Remix IDE</li>
-                    <li>Compile with Solidity 0.8.19+</li>
-                    <li>Connect MetaMask to Over Protocol Mainnet (RPC: https://rpc.overprotocol.com/)</li>
-                    <li>Deploy with constructor params:
-                      <ul className="list-disc list-inside ml-4 mt-1">
-                        <li>_woverToken: 0x59c914C8ac6F212bb655737CC80d9Abc79A1e273</li>
-                        <li>_usdtToken: 0xA510432E4aa60B4acd476fb850EC84B7EE226b2d</li>
-                        <li>_usdcToken: 0x8712796136Ac8e0EEeC123251ef93702f265aa80</li>
-                        <li>_privateTableFee: 10000000 (10 USDT/USDC with 6 decimals)</li>
-                      </ul>
-                    </li>
-                    <li>After deployment, update contract address in platform_config</li>
-                    <li>Add POKER_CONTRACT_ADDRESS secret in Lovable Cloud</li>
-                  </ol>
-                </div>
-
-                {/* Config Values */}
+                {/* Platform Constants */}
                 <div className="p-4 rounded-lg bg-background/50 border border-border/30">
                   <h4 className="font-semibold text-foreground mb-3">Platform Constants</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -545,6 +684,18 @@ export default function Admin() {
                       <span className="text-foreground font-bold">2.5%</span>
                     </div>
                   </div>
+                </div>
+
+                {/* Security Notice */}
+                <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                  <h4 className="font-semibold text-destructive mb-2 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Security Notice
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    The contract must be deployed from the Master Admin wallet: <code className="bg-muted/30 px-1 rounded text-xs">{MASTER_ADMIN_WALLET}</code>. 
+                    This wallet will be the owner and the only one able to perform admin operations on the contract.
+                  </p>
                 </div>
               </CardContent>
             </Card>

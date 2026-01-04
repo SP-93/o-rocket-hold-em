@@ -13,9 +13,13 @@ import {
   Shield,
   Coins,
   UserPlus,
-  UserMinus
+  UserMinus,
+  AlertTriangle,
+  Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useWalletContext } from '@/contexts/WalletContext';
+import { useAdminOperations, MASTER_ADMIN_WALLET } from '@/hooks/useAdminOperations';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -49,12 +53,14 @@ interface CombinedUser {
 }
 
 export function UserManager() {
+  const { address } = useWalletContext();
+  const { isMasterAdmin, isLoading: isOperationLoading, addAdmin, updateRole, removeAdmin } = useAdminOperations(address);
+  
   const [users, setUsers] = useState<CombinedUser[]>([]);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [newAdminWallet, setNewAdminWallet] = useState('');
-  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -105,77 +111,31 @@ export function UserManager() {
       return;
     }
 
-    setIsAddingAdmin(true);
-
-    const walletLower = newAdminWallet.toLowerCase();
-
     // Check if already exists
+    const walletLower = newAdminWallet.toLowerCase();
     const existing = roles.find(r => r.wallet_address === walletLower);
     if (existing) {
       toast.error('User already has a role assigned');
-      setIsAddingAdmin(false);
       return;
     }
 
-    const { error } = await supabase
-      .from('user_roles')
-      .insert({
-        wallet_address: walletLower,
-        role: 'admin' as AppRole,
-      });
-
-    if (error) {
-      console.error('Error adding admin:', error);
-      toast.error('Failed to add admin');
-    } else {
-      toast.success('Admin role added');
+    const result = await addAdmin(newAdminWallet);
+    if (result.success) {
       setNewAdminWallet('');
       fetchData();
     }
-    setIsAddingAdmin(false);
   };
 
   const handleUpdateRole = async (walletAddress: string, newRole: AppRole | 'remove') => {
-    const walletLower = walletAddress.toLowerCase();
-
     if (newRole === 'remove') {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('wallet_address', walletLower);
-
-      if (error) {
-        toast.error('Failed to remove role');
-      } else {
-        toast.success('Role removed');
+      const result = await removeAdmin(walletAddress);
+      if (result.success) {
         fetchData();
       }
     } else {
-      const existing = roles.find(r => r.wallet_address === walletLower);
-
-      if (existing) {
-        const { error } = await supabase
-          .from('user_roles')
-          .update({ role: newRole })
-          .eq('wallet_address', walletLower);
-
-        if (error) {
-          toast.error('Failed to update role');
-        } else {
-          toast.success('Role updated');
-          fetchData();
-        }
-      } else {
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ wallet_address: walletLower, role: newRole });
-
-        if (error) {
-          toast.error('Failed to add role');
-        } else {
-          toast.success('Role added');
-          fetchData();
-        }
+      const result = await updateRole(walletAddress, newRole);
+      if (result.success) {
+        fetchData();
       }
     }
   };
@@ -185,7 +145,18 @@ export function UserManager() {
     u.profile.wallet_address.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getRoleBadge = (role?: AppRole) => {
+  const getRoleBadge = (role?: AppRole, walletAddress?: string) => {
+    const isMaster = walletAddress?.toLowerCase() === MASTER_ADMIN_WALLET;
+    
+    if (isMaster) {
+      return (
+        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+          <Crown className="h-3 w-3 mr-1" />
+          Master Admin
+        </Badge>
+      );
+    }
+    
     if (!role) return null;
     const colors = {
       admin: 'bg-destructive/20 text-destructive border-destructive/30',
@@ -202,36 +173,59 @@ export function UserManager() {
 
   return (
     <div className="space-y-6">
-      {/* Add Admin */}
-      <Card className="border-border/50 bg-card/50">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <UserPlus className="h-4 w-4" />
-            Add Admin
-          </CardTitle>
-          <CardDescription>Grant admin privileges to a wallet address</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Input
-              value={newAdminWallet}
-              onChange={(e) => setNewAdminWallet(e.target.value)}
-              placeholder="0x..."
-              className="bg-background/50 font-mono"
-            />
-            <Button onClick={handleAddAdmin} disabled={isAddingAdmin}>
-              {isAddingAdmin ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Add Admin
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Security Notice */}
+      {!isMasterAdmin && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-500">Limited Admin Access</p>
+                <p className="text-sm text-muted-foreground">
+                  Only the Master Admin wallet can add new administrators. 
+                  You can manage moderator and user roles.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Add Admin - Only visible to Master Admin */}
+      {isMasterAdmin && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Crown className="h-4 w-4 text-amber-500" />
+              Add Admin
+              <Badge className="ml-2 bg-amber-500/20 text-amber-400 text-xs">Master Admin Only</Badge>
+            </CardTitle>
+            <CardDescription>
+              Grant admin privileges to a wallet address. This action can only be performed by the Master Admin.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Input
+                value={newAdminWallet}
+                onChange={(e) => setNewAdminWallet(e.target.value)}
+                placeholder="0x..."
+                className="bg-background/50 font-mono"
+              />
+              <Button onClick={handleAddAdmin} disabled={isOperationLoading}>
+                {isOperationLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Shield className="h-4 w-4 mr-2" />
+                    Add Admin
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Users List */}
       <Card className="border-border/50 bg-card/50">
@@ -269,68 +263,85 @@ export function UserManager() {
             </p>
           ) : (
             <div className="space-y-3">
-              {filteredUsers.map(({ profile, balance, role }) => (
-                <div
-                  key={profile.id}
-                  className="p-4 rounded-lg bg-background/50 border border-border/30"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-sm font-bold text-primary">
-                          {profile.username.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{profile.username}</h4>
-                          {getRoleBadge(role?.role)}
+              {filteredUsers.map(({ profile, balance, role }) => {
+                const isMaster = profile.wallet_address.toLowerCase() === MASTER_ADMIN_WALLET;
+                const isAdmin = role?.role === 'admin';
+                // Only Master Admin can change admin roles
+                const canChangeRole = isMasterAdmin || (!isAdmin && role?.role !== 'admin');
+                
+                return (
+                  <div
+                    key={profile.id}
+                    className={`p-4 rounded-lg border ${isMaster ? 'bg-amber-500/5 border-amber-500/20' : 'bg-background/50 border-border/30'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isMaster ? 'bg-amber-500/20' : 'bg-primary/20'}`}>
+                          <span className={`text-sm font-bold ${isMaster ? 'text-amber-500' : 'text-primary'}`}>
+                            {profile.username.charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {profile.wallet_address.slice(0, 6)}...{profile.wallet_address.slice(-4)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {balance && (
-                        <div className="text-right text-sm">
-                          <div className="flex items-center gap-1 text-poker-gold">
-                            <Coins className="h-4 w-4" />
-                            <span>{balance.available_chips.toLocaleString()}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold">{profile.username}</h4>
+                            {getRoleBadge(role?.role, profile.wallet_address)}
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            {balance.locked_in_games.toLocaleString()} locked
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {profile.wallet_address.slice(0, 6)}...{profile.wallet_address.slice(-4)}
                           </p>
                         </div>
-                      )}
+                      </div>
 
-                      <Select
-                        value={role?.role || 'none'}
-                        onValueChange={(value) => handleUpdateRole(
-                          profile.wallet_address, 
-                          value === 'none' ? 'remove' : value as AppRole
+                      <div className="flex items-center gap-4">
+                        {balance && (
+                          <div className="text-right text-sm">
+                            <div className="flex items-center gap-1 text-poker-gold">
+                              <Coins className="h-4 w-4" />
+                              <span>{balance.available_chips.toLocaleString()}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {balance.locked_in_games.toLocaleString()} locked
+                            </p>
+                          </div>
                         )}
-                      >
-                        <SelectTrigger className="w-32 bg-background/50">
-                          <SelectValue placeholder="Role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">
-                            <span className="flex items-center gap-1">
-                              <UserMinus className="h-3 w-3" />
-                              No Role
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="moderator">Moderator</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
+
+                        {/* Don't allow changing Master Admin's role */}
+                        {isMaster ? (
+                          <Badge variant="outline" className="w-32 justify-center text-amber-500 border-amber-500/30">
+                            Protected
+                          </Badge>
+                        ) : (
+                          <Select
+                            value={role?.role || 'none'}
+                            onValueChange={(value) => handleUpdateRole(
+                              profile.wallet_address, 
+                              value === 'none' ? 'remove' : value as AppRole
+                            )}
+                            disabled={!canChangeRole && !isMasterAdmin}
+                          >
+                            <SelectTrigger className="w-32 bg-background/50">
+                              <SelectValue placeholder="Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">
+                                <span className="flex items-center gap-1">
+                                  <UserMinus className="h-3 w-3" />
+                                  No Role
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="user">User</SelectItem>
+                              <SelectItem value="moderator">Moderator</SelectItem>
+                              {isMasterAdmin && (
+                                <SelectItem value="admin">Admin</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
