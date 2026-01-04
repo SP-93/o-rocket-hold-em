@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TableCard } from '@/components/lobby/TableCard';
 import { TableFilters } from '@/components/lobby/TableFilters';
@@ -10,7 +9,7 @@ import { TournamentsList } from '@/components/lobby/TournamentsList';
 import { Button } from '@/components/ui/button';
 import { usePokerLobby } from '@/hooks/usePokerLobby';
 import { useWalletContext } from '@/contexts/WalletContext';
-import { Plus, RefreshCw, Loader2, Shield } from 'lucide-react';
+import { Plus, RefreshCw, Loader2 } from 'lucide-react';
 
 type FilterType = 'all' | '5' | '6';
 
@@ -56,18 +55,6 @@ export default function Lobby() {
               </div>
 
               <div className="flex items-center gap-2">
-                {isAdmin && (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="gap-2 border-destructive/50 text-destructive hover:bg-destructive/10"
-                  >
-                    <Link to="/admin">
-                      <Shield className="h-4 w-4" />
-                      Admin
-                    </Link>
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   size="icon"

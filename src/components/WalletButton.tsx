@@ -58,7 +58,7 @@ export function WalletButton() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2 border-primary/50 hover:border-primary">
+        <Button variant="outline" className="gap-2 border-primary bg-primary/10 text-foreground hover:bg-primary/20 hover:border-primary">
           {/* Wallet icon from connector */}
           {connectorInfo?.icon ? (
             <img 
@@ -69,7 +69,7 @@ export function WalletButton() {
           ) : (
             <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
           )}
-          <span className="font-mono text-sm">{shortenedAddress}</span>
+          <span className="font-mono text-sm text-foreground">{shortenedAddress}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

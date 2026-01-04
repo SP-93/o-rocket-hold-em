@@ -60,13 +60,17 @@ export function usePlayerProfile(walletAddress: string | null): UsePlayerProfile
         }
 
         // Check admin role
-        const { data: roleData } = await supabase
+        const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('wallet_address', normalizedAddress)
           .eq('role', 'admin')
           .maybeSingle();
 
+        console.log('[Admin Check] Wallet:', normalizedAddress);
+        console.log('[Admin Check] Role query result:', roleData, roleError);
+        console.log('[Admin Check] isAdmin:', !!roleData);
+        
         setIsAdmin(!!roleData);
       } catch (error) {
         console.error('Error in fetchProfile:', error);
