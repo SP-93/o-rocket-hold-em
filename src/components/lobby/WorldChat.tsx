@@ -122,7 +122,7 @@ export function WorldChat({ walletAddress, username }: WorldChatProps) {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message..."
               maxLength={200}
-              className="flex-1 h-9 text-sm bg-background/50 border-border/50"
+              className="flex-1 h-9 text-sm bg-background/50 border-border/50 text-foreground placeholder:text-muted-foreground"
               disabled={isSending}
             />
             <Button
