@@ -44,9 +44,9 @@ export function usePokerLobby(): UsePokerLobbyResult {
     setError(null);
 
     try {
-      // Fetch tables with seat counts
+      // Fetch tables from safe view (hides password)
       const { data: tablesData, error: tablesError } = await supabase
-        .from('poker_tables')
+        .from('poker_tables_safe')
         .select(`
           id,
           name,
@@ -57,7 +57,8 @@ export function usePokerLobby(): UsePokerLobbyResult {
           pot,
           created_at,
           is_private,
-          creator_wallet
+          creator_wallet,
+          password_protected
         `)
         .order('created_at', { ascending: false });
 
@@ -152,34 +153,23 @@ export function usePokerLobby(): UsePokerLobbyResult {
     creationFeeToken?: string
   ): Promise<string | null> => {
     try {
-      const { data, error } = await supabase
-        .from('poker_tables')
-        .insert({
+      // Use table-manager edge function for secure table creation
+      const { data, error } = await supabase.functions.invoke('table-manager', {
+        body: {
+          action: 'create_table',
           name,
-          max_players: maxPlayers,
-          small_blind: smallBlind,
-          big_blind: bigBlind,
-          is_private: isPrivate,
-          table_password: isPrivate && password ? password : null,
-          allowed_players: isPrivate && allowedPlayers ? allowedPlayers : [],
-          creator_wallet: isPrivate && creatorWallet ? creatorWallet.toLowerCase() : null,
-          creation_fee_tx: isPrivate && creationFeeTx ? creationFeeTx : null,
-          creation_fee_token: isPrivate && creationFeeToken ? creationFeeToken : null,
-        })
-        .select('id')
-        .single();
+          maxPlayers,
+          smallBlind,
+          bigBlind,
+          isPrivate,
+          password: isPrivate ? password : undefined,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      // Create seats for the new table
-      const seatInserts = Array.from({ length: maxPlayers }, (_, i) => ({
-        table_id: data.id,
-        seat_number: i + 1,
-      }));
-
-      await supabase.from('table_seats').insert(seatInserts);
-
-      return data.id;
+      return data?.table?.id || null;
     } catch (err) {
       console.error('Error creating table:', err);
       return null;
