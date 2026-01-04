@@ -4,9 +4,16 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStats } from '@/hooks/useStats';
 import { PokerCardSVG } from '@/components/poker/PokerCardSVG';
 import { PokerChip } from '@/components/poker/PokerChip';
 import { Rocket, Coins, Users, Shield, ChevronRight, Sparkles } from 'lucide-react';
+
+function formatNumber(num: number): string {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
+}
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0 },
@@ -32,6 +39,7 @@ const floatAnimation = {
 export default function Index() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
+  const { stats } = useStats();
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       <Header />
@@ -204,21 +212,21 @@ export default function Index() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <div className="text-4xl md:text-5xl font-display font-bold text-primary mb-2">2,847</div>
+              <div className="text-4xl md:text-5xl font-display font-bold text-primary mb-2">{formatNumber(stats.playerCount)}</div>
               <div className="text-sm text-muted-foreground uppercase tracking-wide">{t('stats.players')}</div>
             </div>
             <div className="text-center p-6 md:border-x border-border/30">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-poker-gold/10 border border-poker-gold/20 mb-4">
                 <Rocket className="h-6 w-6 text-poker-gold" />
               </div>
-              <div className="text-4xl md:text-5xl font-display font-bold text-poker-gold mb-2">156</div>
+              <div className="text-4xl md:text-5xl font-display font-bold text-poker-gold mb-2">{stats.tableCount}</div>
               <div className="text-sm text-muted-foreground uppercase tracking-wide">{t('stats.tables')}</div>
             </div>
             <div className="text-center p-6">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 mb-4">
                 <Coins className="h-6 w-6 text-primary" />
               </div>
-              <div className="text-4xl md:text-5xl font-display font-bold text-primary mb-2">4.2M</div>
+              <div className="text-4xl md:text-5xl font-display font-bold text-primary mb-2">{formatNumber(stats.totalPot)}</div>
               <div className="text-sm text-muted-foreground uppercase tracking-wide">{t('stats.potSize')}</div>
             </div>
           </motion.div>
