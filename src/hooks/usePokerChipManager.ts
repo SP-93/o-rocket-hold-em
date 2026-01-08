@@ -1,13 +1,48 @@
+import { useEffect, useState } from 'react';
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import { overProtocol } from '@/config/wagmi';
 import { TOKEN_ADDRESSES, WOVER_DECIMALS } from '@/hooks/useTokenBalance';
+import { 
+  POKER_CHIP_MANAGER_ABI, 
+  getStoredContractAddress 
+} from '@/constants/pokerChipManagerContract';
 
-// Contract address - will be set after deployment
-// For now, using a placeholder that should be replaced with actual deployed address
-export const POKER_CHIP_MANAGER_ADDRESS = '0x0000000000000000000000000000000000000000' as `0x${string}`;
+// ERC20 Approve ABI for WOVER token
+export const ERC20_APPROVE_ABI = [
+  {
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'approve',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    name: 'allowance',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
 
-// ABI for the PokerChipManager contract
+export function usePokerChipManager(address?: `0x${string}`) {
+  const [contractAddress, setContractAddress] = useState<`0x${string}` | null>(null);
+
+  // Load contract address from storage
+  useEffect(() => {
+    const stored = getStoredContractAddress();
+    setContractAddress(stored);
+  }, []);
+
+  // Check if contract is deployed
+  const isContractDeployed = !!contractAddress && contractAddress !== '0x0000000000000000000000000000000000000000';
 export const POKER_CHIP_MANAGER_ABI = [
   {
     inputs: [{ name: 'woverAmount', type: 'uint256' }],
@@ -101,7 +136,7 @@ export function usePokerChipManager(address?: `0x${string}`) {
 
   // Read player chips from contract
   const { data: playerChips, refetch: refetchChips } = useReadContract({
-    address: POKER_CHIP_MANAGER_ADDRESS,
+    address: contractAddress || undefined,
     abi: POKER_CHIP_MANAGER_ABI,
     functionName: 'getPlayerChips',
     args: address ? [address] : undefined,
@@ -112,7 +147,7 @@ export function usePokerChipManager(address?: `0x${string}`) {
 
   // Read full balance
   const { data: fullBalance, refetch: refetchFullBalance } = useReadContract({
-    address: POKER_CHIP_MANAGER_ADDRESS,
+    address: contractAddress || undefined,
     abi: POKER_CHIP_MANAGER_ABI,
     functionName: 'getPlayerFullBalance',
     args: address ? [address] : undefined,
@@ -126,7 +161,7 @@ export function usePokerChipManager(address?: `0x${string}`) {
     address: TOKEN_ADDRESSES.WOVER,
     abi: ERC20_APPROVE_ABI,
     functionName: 'allowance',
-    args: address ? [address, POKER_CHIP_MANAGER_ADDRESS] : undefined,
+    args: address && contractAddress ? [address, contractAddress] : undefined,
     query: {
       enabled: !!address && isContractDeployed,
     },
@@ -142,7 +177,7 @@ export function usePokerChipManager(address?: `0x${string}`) {
 
   // Approve WOVER spending
   const approveWover = async (amount: string) => {
-    if (!address) return;
+    if (!address || !contractAddress) return;
     
     const amountWei = parseUnits(amount, WOVER_DECIMALS);
     
@@ -150,7 +185,7 @@ export function usePokerChipManager(address?: `0x${string}`) {
       address: TOKEN_ADDRESSES.WOVER,
       abi: ERC20_APPROVE_ABI,
       functionName: 'approve',
-      args: [POKER_CHIP_MANAGER_ADDRESS, amountWei],
+      args: [contractAddress, amountWei],
       chain: overProtocol,
       account: address,
     });
@@ -158,19 +193,18 @@ export function usePokerChipManager(address?: `0x${string}`) {
 
   // Buy chips with WOVER (deposit)
   const buyIn = async (woverAmount: string) => {
-    if (!address || !isContractDeployed) return;
+    if (!address || !isContractDeployed || !contractAddress) return;
     
     const amountWei = parseUnits(woverAmount, WOVER_DECIMALS);
     
     // Check if approval is needed
     if (!allowance || allowance < amountWei) {
-      // First approve, then buyIn will be called after approval
       await approveWover(woverAmount);
       return;
     }
     
     writeContract({
-      address: POKER_CHIP_MANAGER_ADDRESS,
+      address: contractAddress,
       abi: POKER_CHIP_MANAGER_ABI,
       functionName: 'buyIn',
       args: [amountWei],
@@ -181,12 +215,12 @@ export function usePokerChipManager(address?: `0x${string}`) {
 
   // Cash out chips for WOVER (withdrawal)
   const cashOut = async (chipAmount: string) => {
-    if (!address || !isContractDeployed) return;
+    if (!address || !isContractDeployed || !contractAddress) return;
     
     const amountWei = parseUnits(chipAmount, WOVER_DECIMALS);
     
     writeContract({
-      address: POKER_CHIP_MANAGER_ADDRESS,
+      address: contractAddress,
       abi: POKER_CHIP_MANAGER_ABI,
       functionName: 'cashOut',
       args: [amountWei],
