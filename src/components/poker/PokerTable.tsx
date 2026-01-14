@@ -25,6 +25,8 @@ interface PokerTableProps {
   maxPlayers: 5 | 6;
   className?: string;
   onSeatClick?: (seatNumber: number) => void;
+  tableId?: string;
+  currentPlayerWallet?: string;
 }
 
 // Seat positions for 6-player table (oval layout)
@@ -54,6 +56,8 @@ export function PokerTable({
   maxPlayers,
   className,
   onSeatClick,
+  tableId,
+  currentPlayerWallet,
 }: PokerTableProps) {
   const seatPositions = maxPlayers === 6 ? seatPositions6 : seatPositions5;
 
@@ -71,15 +75,22 @@ export function PokerTable({
         </div>
 
         {/* Player seats */}
-        {seatPositions.map((position, index) => (
-          <PlayerSeat
-            key={index}
-            seatNumber={index + 1}
-            player={players[index] || undefined}
-            position={position}
-            onClick={onSeatClick && !players[index] ? () => onSeatClick(index + 1) : undefined}
-          />
-        ))}
+        {seatPositions.map((position, index) => {
+          const player = players[index];
+          const isCurrentPlayer = currentPlayerWallet && player?.walletAddress?.toLowerCase() === currentPlayerWallet.toLowerCase();
+          
+          return (
+            <PlayerSeat
+              key={index}
+              seatNumber={index + 1}
+              player={player || undefined}
+              position={position}
+              onClick={onSeatClick && !player ? () => onSeatClick(index + 1) : undefined}
+              tableId={tableId}
+              isCurrentPlayer={isCurrentPlayer}
+            />
+          );
+        })}
       </div>
     </div>
   );

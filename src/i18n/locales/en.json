@@ -163,7 +163,14 @@
     "clickToJoin": "Click an empty seat to join the table",
     "tableNotFound": "Table not found",
     "joinedSeat": "You joined seat #{{seat}}",
-    "leftTable": "You have left the table"
+    "leftTable": "You have left the table",
+    "sendTip": "Send Tip",
+    "tipSent": "Tip Sent!",
+    "tipSentDesc": "You sent {{amount}} chips to {{player}}",
+    "tipFailed": "Failed to send tip",
+    "tipAmountRange": "Tip must be between 0.1 and 100 chips",
+    "invalidTipAmount": "Please enter a valid amount",
+    "tipRange": "Tip range: 0.1 - 100 chips"
   },
   "chips": {
     "buy": "Buy Chips",
