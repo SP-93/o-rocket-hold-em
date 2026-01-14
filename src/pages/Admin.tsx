@@ -28,12 +28,14 @@ import {
   Lock,
   Copy,
   ExternalLink,
-  FileCode
+  FileCode,
+  Coins
 } from 'lucide-react';
 import { TournamentManager } from '@/components/admin/TournamentManager';
 import { UserManager } from '@/components/admin/UserManager';
 import { PayoutManager } from '@/components/admin/PayoutManager';
 import { ContractDeployment } from '@/components/admin/ContractDeployment';
+import { TreasuryDashboard } from '@/components/admin/TreasuryDashboard';
 import { useAdminOperations, MASTER_ADMIN_WALLET } from '@/hooks/useAdminOperations';
 
 interface TableData {
@@ -252,6 +254,10 @@ export default function Admin() {
             <TabsTrigger value="payouts" className="gap-2">
               <Wallet className="h-4 w-4" />
               Payouts
+            </TabsTrigger>
+            <TabsTrigger value="treasury" className="gap-2">
+              <Coins className="h-4 w-4" />
+              Treasury
             </TabsTrigger>
             <TabsTrigger value="contracts" className="gap-2">
               <Shield className="h-4 w-4" />
@@ -484,6 +490,11 @@ export default function Admin() {
           {/* Payouts Tab */}
           <TabsContent value="payouts">
             <PayoutManager adminWallet={address || ''} />
+          </TabsContent>
+
+          {/* Treasury Tab */}
+          <TabsContent value="treasury">
+            <TreasuryDashboard />
           </TabsContent>
 
           {/* Contracts Tab */}

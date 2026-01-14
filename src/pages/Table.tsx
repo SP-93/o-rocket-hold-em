@@ -225,6 +225,8 @@ export default function Table() {
           maxPlayers={table.max_players as 5 | 6}
           className="mb-8"
           onSeatClick={!playerSeat ? handleSeatClick : undefined}
+          tableId={id}
+          currentPlayerWallet={address}
         />
 
         {/* Action buttons - only show if player is seated */}

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { PlayingCard } from './PlayingCard';
+import { TipButton } from './TipButton';
 import { Card } from '@/types/poker';
 import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +22,8 @@ interface PlayerSeatProps {
   position: { top?: string; bottom?: string; left?: string; right?: string };
   className?: string;
   onClick?: () => void;
+  tableId?: string;
+  isCurrentPlayer?: boolean;
 }
 
 function formatAddress(address: string): string {
@@ -49,8 +52,9 @@ const actionAnimations = {
   'all-in': { scale: 1.1, y: -10 },
 };
 
-export function PlayerSeat({ seatNumber, player, position, className, onClick }: PlayerSeatProps) {
+export function PlayerSeat({ seatNumber, player, position, className, onClick, tableId, isCurrentPlayer }: PlayerSeatProps) {
   const isEmpty = !player;
+  const canTip = tableId && player && !isCurrentPlayer;
 
   return (
     <motion.div
@@ -184,6 +188,14 @@ export function PlayerSeat({ seatNumber, player, position, className, onClick }:
               >
                 {formatChips(player.chipStack)}
               </motion.span>
+              {/* Tip Button - only show for other players */}
+              {canTip && (
+                <TipButton
+                  tableId={tableId!}
+                  toSeatNumber={seatNumber}
+                  toPlayerName={player.displayName}
+                />
+              )}
             </motion.div>
             {/* Last action badge */}
             <AnimatePresence mode="wait">
