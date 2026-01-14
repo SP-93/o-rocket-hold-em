@@ -7,6 +7,7 @@ import {
   POKER_CHIP_MANAGER_ABI, 
   getStoredContractAddress 
 } from '@/constants/pokerChipManagerContract';
+import { toast } from 'sonner';
 
 // ERC20 Approve ABI for WOVER token
 export const ERC20_APPROVE_ABI = [
@@ -88,6 +89,11 @@ export function usePokerChipManager(address?: `0x${string}`) {
   // Approve WOVER spending
   const approveWover = async (amount: string) => {
     if (!address || !contractAddress) return;
+    
+    // Friendly message before MetaMask approval
+    toast.info('Approving WOVER tokens for the poker contract. This is a one-time approval for this amount.', {
+      duration: 5000,
+    });
     
     const amountWei = parseUnits(amount, WOVER_DECIMALS);
     

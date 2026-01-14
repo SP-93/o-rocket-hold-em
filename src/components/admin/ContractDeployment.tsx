@@ -169,7 +169,7 @@ export function ContractDeployment({ isMasterAdmin, connectedAddress }: Contract
                       <Copy className="h-3 w-3" />
                     </Button>
                     <a 
-                      href={`https://explorer.overprotocol.com/address/${contractAddress || storedAddress}`}
+                      href={`https://scan.over.network/address/${contractAddress || storedAddress}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
@@ -262,7 +262,7 @@ export function ContractDeployment({ isMasterAdmin, connectedAddress }: Contract
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Transaction:</span>
               <a 
-                href={`https://explorer.overprotocol.com/tx/${txHash}`}
+                href={`https://scan.over.network/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline text-sm flex items-center gap-1"

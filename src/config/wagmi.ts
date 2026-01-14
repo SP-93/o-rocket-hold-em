@@ -13,7 +13,7 @@ export const overProtocol = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['https://rpc.overprotocol.com/'],
+      http: ['https://rpc.over.network/', 'https://rpc.overprotocol.com/'],
     },
   },
   blockExplorers: {
