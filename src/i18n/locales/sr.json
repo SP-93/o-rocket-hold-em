@@ -205,10 +205,13 @@
     "withdrawProcessing": "Zahtev za isplatu je poslat",
     "withdrawQueued": "Zahtev za isplatu je dodat u red",
     "balancesRefreshed": "Stanja su osvežena",
+    "balanceSynced": "Stanje uspešno sinhronizovano!",
+    "onChainBalance": "On-chain stanje",
     "enterAmount": "Molimo unesite iznos",
     "infoLine1": "Uplate se obrađuju automatski nakon potvrde na blockchain-u.",
     "infoLine2": "Isplate mogu potrajati do 24 sata za obradu.",
-    "infoLine3": "1 WOVER = 1 ČIP. Micro-stakes stolovi dostupni (0.01/0.02 blindovi)."
+    "infoLine3": "1 WOVER = 1 ČIP. Micro-stakes stolovi dostupni (0.01/0.02 blindovi).",
+    "approvalInfo": "Odobravanje WOVER tokena za poker ugovor. Ovo je jednokratno odobrenje za ovaj iznos."
   },
   "admin": {
     "title": "Admin Panel",

@@ -211,10 +211,13 @@
     "withdrawProcessing": "Withdrawal request submitted",
     "withdrawQueued": "Withdrawal queued for processing",
     "balancesRefreshed": "Balances refreshed",
+    "balanceSynced": "Balance synced successfully!",
+    "onChainBalance": "On-chain balance",
     "enterAmount": "Please enter an amount",
     "infoLine1": "Deposits are processed automatically after blockchain confirmation.",
     "infoLine2": "Withdrawals may take up to 24 hours for processing.",
-    "infoLine3": "1 WOVER = 1 CHIP. Micro-stakes tables available (0.01/0.02 blinds)."
+    "infoLine3": "1 WOVER = 1 CHIP. Micro-stakes tables available (0.01/0.02 blinds).",
+    "approvalInfo": "Approving WOVER tokens for the poker contract. This is a one-time approval for this amount."
   },
   "admin": {
     "title": "Admin Panel",

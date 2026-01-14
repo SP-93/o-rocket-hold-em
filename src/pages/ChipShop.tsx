@@ -46,6 +46,7 @@ export default function ChipShop() {
   // Smart contract integration
   const { 
     isContractDeployed,
+    playerChips: onChainChips,
     buyIn: contractBuyIn,
     cashOut: contractCashOut,
     isPending: isContractPending,
@@ -53,6 +54,35 @@ export default function ChipShop() {
     isSuccess: isContractSuccess,
     refetchAll: refetchContract
   } = usePokerChipManager(address as `0x${string}` | undefined);
+
+  // Sync on-chain balance to database after successful contract transaction
+  useEffect(() => {
+    const syncBalance = async () => {
+      if (isContractSuccess && address && isContractDeployed) {
+        try {
+          // Give time for on-chain state to update
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          refetchContract();
+          
+          // Sync to database
+          await supabase.functions.invoke('chip-manager', {
+            body: {
+              action: 'sync_balance',
+              walletAddress: address.toLowerCase(),
+              onChainChips: parseFloat(onChainChips),
+            },
+          });
+          
+          refetchChips();
+          toast.success(t('chipShop.balanceSynced') || 'Balance synced successfully!');
+        } catch (error) {
+          console.error('Sync error:', error);
+        }
+      }
+    };
+    
+    syncBalance();
+  }, [isContractSuccess]);
 
   // Write contract for WOVER transfer (legacy method when contract not deployed)
   const { writeContract, data: txHash, isPending: isTxPending } = useWriteContract();
@@ -214,8 +244,15 @@ export default function ChipShop() {
                   <div>
                     <p className="text-sm text-muted-foreground">{t('chipShop.availableChips')}</p>
                     <p className="text-3xl font-bold text-poker-gold">
-                      {chipsLoading ? '...' : chipBalance?.availableChips.toLocaleString(undefined, { maximumFractionDigits: 4 }) ?? 0}
+                      {chipsLoading ? '...' : (
+                        isContractDeployed 
+                          ? parseFloat(onChainChips).toLocaleString(undefined, { maximumFractionDigits: 4 })
+                          : chipBalance?.availableChips.toLocaleString(undefined, { maximumFractionDigits: 4 }) ?? 0
+                      )}
                     </p>
+                    {isContractDeployed && (
+                      <p className="text-xs text-muted-foreground mt-1">{t('chipShop.onChainBalance') || 'On-chain balance'}</p>
+                    )}
                   </div>
                   <Coins className="w-10 h-10 text-poker-gold/60" />
                 </div>
