@@ -46,27 +46,22 @@ export function PrivateTableJoinModal({
     setError('');
 
     try {
-      // Check if password matches or if user is in allowed list
-      const { data: table, error: fetchError } = await supabase
-        .from('poker_tables')
-        .select('table_password, allowed_players, creator_wallet')
-        .eq('id', tableId)
-        .single();
+      // Server-side password verification via edge function
+      const { data, error: verifyError } = await supabase.functions.invoke('table-manager', {
+        body: {
+          action: 'verify_table_password',
+          tableId,
+          password: password.trim(),
+        },
+      });
 
-      if (fetchError || !table) {
-        setError(t('errors.tableNotFound'));
-        setIsVerifying(false);
+      if (verifyError) {
+        console.error('Verify error:', verifyError);
+        setError(t('errors.verificationFailed'));
         return;
       }
 
-      const walletLower = walletAddress.toLowerCase();
-      const isCreator = table.creator_wallet?.toLowerCase() === walletLower;
-      const isInvited = (table.allowed_players || []).some(
-        (p: string) => p.toLowerCase() === walletLower
-      );
-      const isPasswordCorrect = table.table_password === password;
-
-      if (isCreator || isInvited || isPasswordCorrect) {
+      if (data?.authorized) {
         toast.success(t('lobby.accessGranted'));
         onSuccess();
         onOpenChange(false);
