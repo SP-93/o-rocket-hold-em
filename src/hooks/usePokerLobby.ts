@@ -72,7 +72,7 @@ export function usePokerLobby(): UsePokerLobbyResult {
       let seatsData: { table_id: string; player_wallet: string }[] = [];
       if (tableIds.length > 0) {
         const { data, error: seatsError } = await supabase
-          .from('table_seats')
+          .from('table_seats_safe')
           .select('table_id, player_wallet')
           .in('table_id', tableIds)
           .not('player_wallet', 'is', null);
